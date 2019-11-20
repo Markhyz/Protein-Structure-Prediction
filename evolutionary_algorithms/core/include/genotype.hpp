@@ -12,6 +12,8 @@
 namespace EvoAlg {
     class AbstractGenotype {
       public:
+        POINTER_ALIAS(AbstractGenotype)
+
         virtual ~AbstractGenotype() = 0;
     };
 
@@ -20,7 +22,7 @@ namespace EvoAlg {
     template <typename... ChromosomeTypes>
     class Genotype : public AbstractGenotype {
       public:
-        POINTER_ALIAS(Genotype)
+        POINTER_ALIAS(Genotype<ChromosomeTypes...>)
 
         using gene_t = std::variant<ChromosomeTypes...>;
         using chromosome_t = std::vector<gene_t>;

@@ -1,4 +1,4 @@
-#include "evolutionary_algorithms/core/include/genotype.hpp"
+#include "evolutionary_algorithms/core/include/individual.hpp"
 #include <iostream>
 #include <queue>
 #include <string>

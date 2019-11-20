@@ -7,24 +7,54 @@
 #include <stdexcept>
 
 namespace EvoAlg {
-    class Phenotype {
+    class AbstractPhenotype {
       public:
-        POINTER_ALIAS(Phenotype)
+        POINTER_ALIAS(AbstractPhenotype)
+
+        virtual ~AbstractPhenotype() = 0;
+    };
+
+    AbstractPhenotype::~AbstractPhenotype(){};
+
+    template <size_t FitnessSize>
+    class Phenotype : public AbstractPhenotype {
+      public:
+        POINTER_ALIAS(Phenotype<FitnessSize>)
 
         class UndefinedFitnessException : public std::exception {
           public:
-            virtual const char* what() const throw();
+            virtual const char* what() const throw() {
+                return "undefined fitness value";
+            }
         };
 
-        Phenotype(AbstractFitness::shared_ptr const& fitness);
+        Phenotype(typename AbstractFitnessFunction<FitnessSize>::shared_ptr const& fitness);
 
-        double getFitnessValue(size_t index) const;
         void evaluateFitness(AbstractGenotype const& genotype);
+        typename AbstractFitnessFunction<FitnessSize>::fitness_t getFitnessValue() const;
 
       private:
-        AbstractFitness::shared_ptr fitness_;
-        std::optional<AbstractFitness::fitness_t> fitness_value_;
+        typename AbstractFitnessFunction<FitnessSize>::shared_ptr fitness_;
+        std::optional<typename AbstractFitnessFunction<FitnessSize>::fitness_t> fitness_value_;
     };
+
+    template <size_t FitnessSize>
+    Phenotype<FitnessSize>::Phenotype(typename AbstractFitnessFunction<FitnessSize>::shared_ptr const& fitness)
+        : fitness_(fitness){};
+
+    template <size_t FitnessSize>
+    void Phenotype<FitnessSize>::evaluateFitness(AbstractGenotype const& genotype) {
+        fitness_value_ = (*fitness_)(genotype);
+    }
+
+    template <size_t FitnessSize>
+    typename AbstractFitnessFunction<FitnessSize>::fitness_t Phenotype<FitnessSize>::getFitnessValue() const {
+        if (!fitness_value_.has_value()) {
+            throw UndefinedFitnessException();
+        }
+
+        return fitness_value_.value();
+    }
 }
 
 #endif
