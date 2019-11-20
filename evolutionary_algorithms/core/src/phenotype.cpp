@@ -11,7 +11,7 @@ double Phenotype::getFitnessValue(size_t index) const {
     }
 
     std::vector<double> const& value = fitness_value_.value();
-    if (index < 0 || index >= value.size()) {
+    if (index >= value.size()) {
         throw std::out_of_range("out of range access");
     }
 

@@ -8,7 +8,7 @@
 
 using namespace std;
 
-int main(int argc, char const **argv) {
+int main() {
     vector<size_t> sizes = {10, 2, 31};
     vector<int> v1 = {1, 2, 5, 41};
     vector<double> v2 = {2.3, 1.002, 131.03, 0.4};
@@ -28,5 +28,8 @@ int main(int argc, char const **argv) {
         cout << x << " ";
     }
     cout << endl;
+    genotype.setChromosome<2>(1, "sss");
+    vector<double> vd{2.3, 0.432, 11, 234.1121};
+    genotype.setChromosome<1>(vd);
     return 0;
 }
