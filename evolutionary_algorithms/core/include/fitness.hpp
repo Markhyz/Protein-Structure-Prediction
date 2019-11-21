@@ -14,7 +14,7 @@ namespace EvoAlg {
 
         using fitness_t = std::conditional_t<FitnessSize == 1, double, std::vector<double>>;
 
-        int8_t getSign(size_t index) const;
+        virtual int8_t getSign(size_t index) const = 0;
 
         virtual fitness_t operator()(AbstractGenotype const& genotype) const = 0;
 
