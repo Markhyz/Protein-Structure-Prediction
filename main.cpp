@@ -1,5 +1,6 @@
 #include "evolutionary_algorithms/core/include/individual.hpp"
 #include <iostream>
+#include <memory>
 #include <queue>
 #include <string>
 #include <type_traits>
@@ -8,28 +9,39 @@
 
 using namespace std;
 
+class NullFitness : public EvoAlg::AbstractFitnessFunction {
+  public:
+    virtual fitness_t operator()(EvoAlg::AbstractGenotype const& genotype) const {
+        return {-5.3};
+    }
+
+    virtual size_t getSize() const {
+        return size;
+    }
+
+    virtual vector<int8_t> const& getSign() const {
+        return sign;
+    }
+
+  private:
+    size_t size = 1;
+    vector<int8_t> sign{1};
+};
+
 int main() {
-    vector<size_t> sizes = {10, 2, 31};
-    vector<int> v1 = {1, 2, 5, 41};
-    vector<double> v2 = {2.3, 1.002, 131.03, 0.4};
-    vector<string> v3 = {"esdad", "sfddsf", "da"};
-    vector<char> v4 = {'s', 'x'};
-    EvoAlg::Genotype<int, double, string> genotype(sizes);
-    EvoAlg::Genotype<int, double, string> genotype2(v1, v2, v3);
-    for (auto &x : genotype2.getChromosome<0>()) {
+    shared_ptr<NullFitness> fit = make_shared<NullFitness>();
+    EvoAlg::Individual<int> ind(fit, {3, 6, 2, 1, 7, 9});
+    ind.setChromosome<0>(3, -10);
+    for (int x : ind.getChromosome<0>()) {
         cout << x << " ";
     }
     cout << endl;
-    for (auto &x : genotype2.getChromosome<1>()) {
+    ind.evaluateFitness();
+    double x = ind.getFitnessValue()[0];
+    cout << x << endl;
+    ind.setChromosome<0>(vector<int>{2, 3, 5});
+    for (int x : ind.getChromosome<0>()) {
         cout << x << " ";
     }
-    cout << endl;
-    for (auto &x : genotype2.getChromosome<2>()) {
-        cout << x << " ";
-    }
-    cout << endl;
-    genotype.setChromosome<2>(1, "sss");
-    vector<double> vd{2.3, 0.432, 11, 234.1121};
-    genotype.setChromosome<1>(vd);
     return 0;
 }

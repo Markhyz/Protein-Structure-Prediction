@@ -17,8 +17,6 @@ namespace EvoAlg {
         virtual ~AbstractGenotype() = 0;
     };
 
-    AbstractGenotype::~AbstractGenotype(){};
-
     template <typename... ChromosomeTypes>
     class Genotype : public AbstractGenotype {
       public:
@@ -28,7 +26,6 @@ namespace EvoAlg {
         using chromosome_t = std::vector<gene_t>;
 
         Genotype(std::vector<ChromosomeTypes> const&... chromosomes);
-        Genotype(std::vector<size_t> const& chromosome_size);
 
         template <size_t ChromosomeIndex>
         std::vector<NthType<ChromosomeIndex, ChromosomeTypes...>> getChromosome() const;
@@ -56,17 +53,6 @@ namespace EvoAlg {
         : chromosomes_{this->encodeChromosome(chromosomes)...}, chromosome_size_(chromosomes_.size()) {
         for (size_t index = 0; index < chromosomes_.size(); ++index) {
             chromosome_size_[index] = chromosomes_[index].size();
-        }
-    }
-
-    template <typename... ChromosomeTypes>
-    Genotype<ChromosomeTypes...>::Genotype(std::vector<size_t> const& chromosome_size)
-        : chromosomes_(sizeof...(ChromosomeTypes)), chromosome_size_(chromosome_size) {
-        if (chromosome_size_.size() > sizeof...(ChromosomeTypes)) {
-            throw std::length_error("number of sizes greater than number of types");
-        }
-        for (size_t index = 0; index < chromosomes_.size(); ++index) {
-            chromosomes_[index].resize(chromosome_size_[index]);
         }
     }
 

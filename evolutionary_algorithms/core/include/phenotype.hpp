@@ -7,19 +7,9 @@
 #include <stdexcept>
 
 namespace EvoAlg {
-    class AbstractPhenotype {
+    class Phenotype {
       public:
-        POINTER_ALIAS(AbstractPhenotype)
-
-        virtual ~AbstractPhenotype() = 0;
-    };
-
-    AbstractPhenotype::~AbstractPhenotype(){};
-
-    template <size_t FitnessSize>
-    class Phenotype : public AbstractPhenotype {
-      public:
-        POINTER_ALIAS(Phenotype<FitnessSize>)
+        POINTER_ALIAS(Phenotype)
 
         class UndefinedFitnessException : public std::exception {
           public:
@@ -28,33 +18,17 @@ namespace EvoAlg {
             }
         };
 
-        Phenotype(typename AbstractFitnessFunction<FitnessSize>::shared_ptr const& fitness);
+        Phenotype(typename AbstractFitnessFunction::const_shared_ptr const& fitness);
 
         void evaluateFitness(AbstractGenotype const& genotype);
-        typename AbstractFitnessFunction<FitnessSize>::fitness_t getFitnessValue() const;
+
+        AbstractFitnessFunction::const_shared_ptr getFitnessFunction() const;
+        typename AbstractFitnessFunction::fitness_t const& getFitnessValue() const;
 
       private:
-        typename AbstractFitnessFunction<FitnessSize>::shared_ptr fitness_;
-        std::optional<typename AbstractFitnessFunction<FitnessSize>::fitness_t> fitness_value_;
+        typename AbstractFitnessFunction::const_shared_ptr fitness_;
+        std::optional<typename AbstractFitnessFunction::fitness_t> fitness_value_;
     };
-
-    template <size_t FitnessSize>
-    Phenotype<FitnessSize>::Phenotype(typename AbstractFitnessFunction<FitnessSize>::shared_ptr const& fitness)
-        : fitness_(fitness){};
-
-    template <size_t FitnessSize>
-    void Phenotype<FitnessSize>::evaluateFitness(AbstractGenotype const& genotype) {
-        fitness_value_ = (*fitness_)(genotype);
-    }
-
-    template <size_t FitnessSize>
-    typename AbstractFitnessFunction<FitnessSize>::fitness_t Phenotype<FitnessSize>::getFitnessValue() const {
-        if (!fitness_value_.has_value()) {
-            throw UndefinedFitnessException();
-        }
-
-        return fitness_value_.value();
-    }
 }
 
 #endif

@@ -7,20 +7,18 @@
 #include <vector>
 
 namespace EvoAlg {
-    template <size_t FitnessSize>
     class AbstractFitnessFunction {
       public:
-        POINTER_ALIAS(AbstractFitnessFunction<FitnessSize>)
+        POINTER_ALIAS(AbstractFitnessFunction)
 
-        using fitness_t = std::conditional_t<FitnessSize == 1, double, std::vector<double>>;
+        using fitness_t = std::vector<double>;
 
-        virtual int8_t getSign(size_t index) const = 0;
+        virtual std::vector<int8_t> const& getSign() const = 0;
+        virtual size_t getSize() const = 0;
 
         virtual fitness_t operator()(AbstractGenotype const& genotype) const = 0;
 
         virtual ~AbstractFitnessFunction() = default;
-
-        constexpr static size_t size = FitnessSize;
     };
 }
 

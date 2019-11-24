@@ -5,6 +5,7 @@
 #include "../../../commons/include/types.hpp"
 #include "genotype.hpp"
 #include "phenotype.hpp"
+#include <utility>
 
 namespace EvoAlg {
     class AbstractIndividual {
@@ -14,33 +15,61 @@ namespace EvoAlg {
         virtual ~AbstractIndividual() = 0;
     };
 
-    AbstractIndividual::~AbstractIndividual(){};
-
     template <typename... ChromosomeTypes>
     class Individual : public AbstractIndividual {
       public:
         POINTER_ALIAS(Individual)
 
-        Individual(AbstractFitness::shared_ptr fitness, std::vector<ChromosomeTypes> const&... chromosomes);
-        Individual(AbstractFitness::shared_ptr fitness, std::vector<size_t> const& chromosome_size);
+        Individual(typename AbstractFitnessFunction::const_shared_ptr fitness,
+                   std::vector<ChromosomeTypes> const&... chromosomes);
 
         void evaluateFitness();
 
         template <size_t ChromosomeIndex>
         std::vector<NthType<ChromosomeIndex, ChromosomeTypes...>> getChromosome() const;
 
-        double getFitnessValue(size_t index) const;
+        typename AbstractFitnessFunction::const_shared_ptr getFitnessFunction() const;
+        typename AbstractFitnessFunction::fitness_t const& getFitnessValue() const;
 
-        template <size_t ChromosomeIndex>
-        void setChromosome(std::vector<NthType<ChromosomeIndex, ChromosomeTypes...>> const& chromosome);
-
-        template <size_t ChromosomeIndex>
-        void setChromosome(size_t index, NthType<ChromosomeIndex, ChromosomeTypes...> const& gene);
+        template <size_t ChromosomeIndex, typename... Args>
+        void setChromosome(Args&&... args);
 
       private:
-        Genotype<ChromosomeTypes...> genotype;
-        Phenotype phenotype;
+        Genotype<ChromosomeTypes...> genotype_;
+        Phenotype phenotype_;
     };
+
+    template <typename... ChromosomeTypes>
+    Individual<ChromosomeTypes...>::Individual(typename AbstractFitnessFunction::const_shared_ptr fitness,
+                                               std::vector<ChromosomeTypes> const&... chromosomes)
+        : genotype_(chromosomes...), phenotype_(fitness){};
+
+    template <typename... ChromosomeTypes>
+    void Individual<ChromosomeTypes...>::evaluateFitness() {
+        phenotype_.evaluateFitness(genotype_);
+    }
+
+    template <typename... ChromosomeTypes>
+    template <size_t ChromosomeIndex>
+    std::vector<NthType<ChromosomeIndex, ChromosomeTypes...>> Individual<ChromosomeTypes...>::getChromosome() const {
+        return genotype_.template getChromosome<ChromosomeIndex>();
+    }
+
+    template <typename... ChromosomeTypes>
+    typename AbstractFitnessFunction::const_shared_ptr Individual<ChromosomeTypes...>::getFitnessFunction() const {
+        return phenotype_.getFitnessFunction();
+    }
+
+    template <typename... ChromosomeTypes>
+    typename AbstractFitnessFunction::fitness_t const& Individual<ChromosomeTypes...>::getFitnessValue() const {
+        return phenotype_.getFitnessValue();
+    }
+
+    template <typename... ChromosomeTypes>
+    template <size_t ChromosomeIndex, typename... Args>
+    void Individual<ChromosomeTypes...>::setChromosome(Args&&... args) {
+        genotype_.template setChromosome<ChromosomeIndex>(std::forward<Args>(args)...);
+    }
 }
 
 #endif
