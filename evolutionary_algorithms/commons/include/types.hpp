@@ -4,9 +4,7 @@
 #include <cstddef>
 #include <tuple>
 
-using std::size_t;
-
-template <size_t N, typename... Ts>
+template <std::size_t N, typename... Ts>
 using NthType = typename std::tuple_element<N, std::tuple<Ts...>>::type;
 
 #endif

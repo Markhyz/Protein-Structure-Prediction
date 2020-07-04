@@ -15,17 +15,17 @@ class NullFitness : public EvoAlg::AbstractFitnessFunction {
         return {-5.3};
     }
 
-    virtual size_t getSize() const {
-        return size;
+    virtual size_t getDimension() const {
+        return dimension;
     }
 
-    virtual vector<int8_t> const& getSign() const {
+    virtual vector<bool> const& getDirection() const {
         return sign;
     }
 
   private:
-    size_t size = 1;
-    vector<int8_t> sign{1};
+    size_t dimension = 1;
+    vector<bool> sign{1};
 };
 
 int main() {

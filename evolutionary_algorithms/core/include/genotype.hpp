@@ -1,8 +1,8 @@
 #ifndef GUARD_H_GENOTYPE
 #define GUARD_H_GENOTYPE
 
-#include "../../../commons/include/macros.hpp"
-#include "../../../commons/include/types.hpp"
+#include "../../commons/include/macros.hpp"
+#include "../../commons/include/types.hpp"
 #include <algorithm>
 #include <stdexcept>
 #include <type_traits>
