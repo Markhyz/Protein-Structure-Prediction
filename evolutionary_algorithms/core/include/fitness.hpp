@@ -3,6 +3,7 @@
 
 #include "../../commons/include/macros.hpp"
 #include "../../commons/include/types.hpp"
+
 #include "genotype.hpp"
 #include <vector>
 

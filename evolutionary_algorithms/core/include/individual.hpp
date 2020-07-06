@@ -5,6 +5,7 @@
 #include "../../commons/include/types.hpp"
 #include "genotype.hpp"
 #include "phenotype.hpp"
+
 #include <utility>
 
 namespace EvoAlg {
@@ -20,12 +21,13 @@ namespace EvoAlg {
       public:
         POINTER_ALIAS(Individual)
 
+        Individual();
         Individual(typename AbstractFitnessFunction::const_shared_ptr fitness,
                    std::vector<ChromosomeTypes> const&... chromosomes);
 
         void evaluateFitness();
 
-        template <size_t ChromosomeIndex>
+        template <size_t ChromosomeIndex = 0>
         std::vector<NthType<ChromosomeIndex, ChromosomeTypes...>> getChromosome() const;
 
         typename AbstractFitnessFunction::const_shared_ptr getFitnessFunction() const;
@@ -38,6 +40,9 @@ namespace EvoAlg {
         Genotype<ChromosomeTypes...> genotype_;
         Phenotype phenotype_;
     };
+
+    template <typename... ChromosomeTypes>
+    Individual<ChromosomeTypes...>::Individual(){};
 
     template <typename... ChromosomeTypes>
     Individual<ChromosomeTypes...>::Individual(typename AbstractFitnessFunction::const_shared_ptr fitness,

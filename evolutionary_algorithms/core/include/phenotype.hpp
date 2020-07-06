@@ -3,6 +3,7 @@
 
 #include "../../commons/include/macros.hpp"
 #include "fitness.hpp"
+
 #include <optional>
 #include <stdexcept>
 
@@ -18,6 +19,7 @@ namespace EvoAlg {
             }
         };
 
+        Phenotype();
         Phenotype(typename AbstractFitnessFunction::const_shared_ptr const& fitness);
 
         void evaluateFitness(AbstractGenotype const& genotype);

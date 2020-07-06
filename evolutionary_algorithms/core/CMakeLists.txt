@@ -23,4 +23,7 @@ target_link_libraries(individual PUBLIC phenotype genotype commons)
 target_compile_features(individual PUBLIC cxx_std_17)
 target_compile_options(individual PRIVATE ${CXX_FLAGS})
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    add_subdirectory(test)
+endif()
 

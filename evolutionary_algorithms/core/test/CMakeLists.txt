@@ -1,0 +1,4 @@
+add_executable(test_individual testIndividual.cpp)
+target_include_directories(test_individual PRIVATE ../include)
+target_link_libraries(test_individual PRIVATE individual gtest_main)
+target_compile_features(test_individual PRIVATE cxx_std_17)

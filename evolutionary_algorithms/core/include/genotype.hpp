@@ -3,6 +3,7 @@
 
 #include "../../commons/include/macros.hpp"
 #include "../../commons/include/types.hpp"
+
 #include <algorithm>
 #include <stdexcept>
 #include <type_traits>
@@ -25,15 +26,16 @@ namespace EvoAlg {
         using gene_t = std::variant<ChromosomeTypes...>;
         using chromosome_t = std::vector<gene_t>;
 
+        Genotype();
         Genotype(std::vector<ChromosomeTypes> const&... chromosomes);
 
-        template <size_t ChromosomeIndex>
+        template <size_t ChromosomeIndex = 0>
         std::vector<NthType<ChromosomeIndex, ChromosomeTypes...>> getChromosome() const;
 
-        template <size_t ChromosomeIndex>
+        template <size_t ChromosomeIndex = 0>
         void setChromosome(std::vector<NthType<ChromosomeIndex, ChromosomeTypes...>> const& chromosome);
 
-        template <size_t ChromosomeIndex>
+        template <size_t ChromosomeIndex = 0>
         void setChromosome(size_t index, NthType<ChromosomeIndex, ChromosomeTypes...> const& gene);
 
       private:
@@ -42,11 +44,14 @@ namespace EvoAlg {
         decodeChromosome(std::vector<gene_t> const& encoded_chromosome) const;
 
         template <typename ChromosomeType>
-        chromosome_t encodeChromosome(std::vector<ChromosomeType> const& simple_chromosome) const;
+        chromosome_t encodeChromosome(std::vector<ChromosomeType> const& simplified_chromosome) const;
 
         std::vector<chromosome_t> chromosomes_;
         std::vector<size_t> chromosome_size_;
     };
+
+    template <typename... ChromosomeTypes>
+    Genotype<ChromosomeTypes...>::Genotype(){};
 
     template <typename... ChromosomeTypes>
     Genotype<ChromosomeTypes...>::Genotype(std::vector<ChromosomeTypes> const&... chromosomes)
@@ -60,21 +65,21 @@ namespace EvoAlg {
     template <size_t ChromosomeIndex>
     std::vector<NthType<ChromosomeIndex, ChromosomeTypes...>> Genotype<ChromosomeTypes...>::decodeChromosome(
         std::vector<typename Genotype<ChromosomeTypes...>::gene_t> const& encoded_chromosome) const {
-        std::vector<NthType<ChromosomeIndex, ChromosomeTypes...>> simple_chromosome(encoded_chromosome.size());
+        std::vector<NthType<ChromosomeIndex, ChromosomeTypes...>> simplified_chromosome(encoded_chromosome.size());
         transform(
-            encoded_chromosome.begin(), encoded_chromosome.end(), simple_chromosome.begin(),
+            encoded_chromosome.begin(), encoded_chromosome.end(), simplified_chromosome.begin(),
             [](gene_t const& gene) -> NthType<ChromosomeIndex, ChromosomeTypes...> {
                 return std::get<ChromosomeIndex>(gene);
             });
-        return simple_chromosome;
+        return simplified_chromosome;
     }
 
     template <typename... ChromosomeTypes>
     template <typename ChromosomeType>
     typename Genotype<ChromosomeTypes...>::chromosome_t
-    Genotype<ChromosomeTypes...>::encodeChromosome(std::vector<ChromosomeType> const& simple_chromosome) const {
-        chromosome_t encoded_chromosome(simple_chromosome.size());
-        std::copy(simple_chromosome.begin(), simple_chromosome.end(), encoded_chromosome.begin());
+    Genotype<ChromosomeTypes...>::encodeChromosome(std::vector<ChromosomeType> const& simplified_chromosome) const {
+        chromosome_t encoded_chromosome(simplified_chromosome.size());
+        std::copy(simplified_chromosome.begin(), simplified_chromosome.end(), encoded_chromosome.begin());
         return encoded_chromosome;
     }
 

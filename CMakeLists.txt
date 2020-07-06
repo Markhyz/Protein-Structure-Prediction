@@ -8,4 +8,4 @@ add_subdirectory(evolutionary_algorithms)
 
 add_executable(test main.cpp)
 target_link_libraries(test PUBLIC individual)
-target_compile_features(test PRIVATE cxx_std_17)
+target_compile_features(test PUBLIC cxx_std_17)

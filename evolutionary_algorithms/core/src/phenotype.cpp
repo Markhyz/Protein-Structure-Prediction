@@ -3,6 +3,8 @@
 
 using namespace EvoAlg;
 
+Phenotype::Phenotype(){};
+
 Phenotype::Phenotype(typename AbstractFitnessFunction::const_shared_ptr const& fitness) : fitness_(fitness){};
 
 void Phenotype::evaluateFitness(AbstractGenotype const& genotype) {
