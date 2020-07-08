@@ -9,20 +9,13 @@
 #include <utility>
 
 namespace EvoAlg {
-    class AbstractIndividual {
-      public:
-        POINTER_ALIAS(AbstractIndividual)
-
-        virtual ~AbstractIndividual() = 0;
-    };
-
     template <typename... ChromosomeTypes>
-    class Individual : public AbstractIndividual {
+    class Individual {
       public:
         POINTER_ALIAS(Individual)
 
         Individual();
-        Individual(typename AbstractFitnessFunction::const_shared_ptr fitness,
+        Individual(typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr fitness,
                    std::vector<ChromosomeTypes> const&... chromosomes);
 
         void evaluateFitness();
@@ -30,23 +23,24 @@ namespace EvoAlg {
         template <size_t ChromosomeIndex = 0>
         std::vector<NthType<ChromosomeIndex, ChromosomeTypes...>> getChromosome() const;
 
-        typename AbstractFitnessFunction::const_shared_ptr getFitnessFunction() const;
-        typename AbstractFitnessFunction::fitness_t const& getFitnessValue() const;
+        typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr getFitnessFunction() const;
+        typename AbstractFitnessFunction<ChromosomeTypes...>::fitness_t const& getFitnessValue() const;
 
         template <size_t ChromosomeIndex, typename... Args>
         void setChromosome(Args&&... args);
 
       private:
         Genotype<ChromosomeTypes...> genotype_;
-        Phenotype phenotype_;
+        Phenotype<ChromosomeTypes...> phenotype_;
     };
 
     template <typename... ChromosomeTypes>
     Individual<ChromosomeTypes...>::Individual(){};
 
     template <typename... ChromosomeTypes>
-    Individual<ChromosomeTypes...>::Individual(typename AbstractFitnessFunction::const_shared_ptr fitness,
-                                               std::vector<ChromosomeTypes> const&... chromosomes)
+    Individual<ChromosomeTypes...>::Individual(
+        typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr fitness,
+        std::vector<ChromosomeTypes> const&... chromosomes)
         : genotype_(chromosomes...), phenotype_(fitness){};
 
     template <typename... ChromosomeTypes>
@@ -61,12 +55,14 @@ namespace EvoAlg {
     }
 
     template <typename... ChromosomeTypes>
-    typename AbstractFitnessFunction::const_shared_ptr Individual<ChromosomeTypes...>::getFitnessFunction() const {
+    typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr
+    Individual<ChromosomeTypes...>::getFitnessFunction() const {
         return phenotype_.getFitnessFunction();
     }
 
     template <typename... ChromosomeTypes>
-    typename AbstractFitnessFunction::fitness_t const& Individual<ChromosomeTypes...>::getFitnessValue() const {
+    typename AbstractFitnessFunction<ChromosomeTypes...>::fitness_t const&
+    Individual<ChromosomeTypes...>::getFitnessValue() const {
         return phenotype_.getFitnessValue();
     }
 

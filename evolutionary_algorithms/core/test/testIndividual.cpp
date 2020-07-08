@@ -8,10 +8,10 @@
 
 using namespace EvoAlg;
 
-class SimpleFitness : public AbstractFitnessFunction {
+class SimpleFitness : public AbstractFitnessFunction<double> {
   public:
-    virtual fitness_t operator()(AbstractGenotype const& genotype) const {
-        std::vector<double> chromosome = dynamic_cast<Genotype<double> const&>(genotype).getChromosome();
+    virtual fitness_t operator()(Genotype<double> const& genotype) const {
+        std::vector<double> chromosome = genotype.getChromosome();
         double total = std::accumulate(chromosome.begin(), chromosome.end(), 0.0);
 
         return {total};
@@ -59,13 +59,12 @@ TEST_F(IndividualTest, EvaluateFitness) {
     EXPECT_DOUBLE_EQ(61.862, total);
 }
 
-class CompositeFitness : public AbstractFitnessFunction {
+class CompositeFitness : public AbstractFitnessFunction<double, bool, char> {
   public:
-    virtual fitness_t operator()(AbstractGenotype const& genotype) const {
-        std::vector<double> chromosome_1 =
-            dynamic_cast<Genotype<double, bool, char> const&>(genotype).getChromosome<0>();
-        std::vector<bool> chromosome_2 = dynamic_cast<Genotype<double, bool, char> const&>(genotype).getChromosome<1>();
-        std::vector<char> chromosome_3 = dynamic_cast<Genotype<double, bool, char> const&>(genotype).getChromosome<2>();
+    virtual fitness_t operator()(Genotype<double, bool, char> const& genotype) const {
+        std::vector<double> chromosome_1 = genotype.getChromosome<0>();
+        std::vector<bool> chromosome_2 = genotype.getChromosome<1>();
+        std::vector<char> chromosome_3 = genotype.getChromosome<2>();
 
         double total = std::accumulate(chromosome_1.begin(), chromosome_1.end(), 0.0);
         int x =
@@ -73,7 +72,7 @@ class CompositeFitness : public AbstractFitnessFunction {
         int y = std::accumulate(chromosome_3.begin(), chromosome_3.end(), 0,
                                 [](int tot, char cur) { return tot + (cur == 'a' || cur == 't'); });
 
-        return {total, (double)x * y};
+        return {total, (double) x * y};
     }
 
     virtual size_t getDimension() const {

@@ -8,6 +8,7 @@
 #include <stdexcept>
 
 namespace EvoAlg {
+    template <typename... ChromosomeTypes>
     class Phenotype {
       public:
         POINTER_ALIAS(Phenotype)
@@ -20,17 +21,46 @@ namespace EvoAlg {
         };
 
         Phenotype();
-        Phenotype(typename AbstractFitnessFunction::const_shared_ptr const& fitness);
+        Phenotype(typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr const& fitness);
 
-        void evaluateFitness(AbstractGenotype const& genotype);
+        void evaluateFitness(Genotype<ChromosomeTypes...> const& genotype);
 
-        AbstractFitnessFunction::const_shared_ptr getFitnessFunction() const;
-        typename AbstractFitnessFunction::fitness_t const& getFitnessValue() const;
+        typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr getFitnessFunction() const;
+        typename AbstractFitnessFunction<ChromosomeTypes...>::fitness_t const& getFitnessValue() const;
 
       private:
-        typename AbstractFitnessFunction::const_shared_ptr fitness_;
-        std::optional<typename AbstractFitnessFunction::fitness_t> fitness_value_;
+        typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr fitness_;
+        std::optional<typename AbstractFitnessFunction<ChromosomeTypes...>::fitness_t> fitness_value_;
     };
+
+    template <typename... ChromosomeTypes>
+    Phenotype<ChromosomeTypes...>::Phenotype(){};
+
+    template <typename... ChromosomeTypes>
+    Phenotype<ChromosomeTypes...>::Phenotype(
+        typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr const& fitness)
+        : fitness_(fitness){};
+
+    template <typename... ChromosomeTypes>
+    void Phenotype<ChromosomeTypes...>::evaluateFitness(Genotype<ChromosomeTypes...> const& genotype) {
+        fitness_value_ = (*fitness_)(genotype);
+    }
+
+    template <typename... ChromosomeTypes>
+    typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr
+    Phenotype<ChromosomeTypes...>::getFitnessFunction() const {
+        return fitness_;
+    }
+
+    template <typename... ChromosomeTypes>
+    typename AbstractFitnessFunction<ChromosomeTypes...>::fitness_t const&
+    Phenotype<ChromosomeTypes...>::getFitnessValue() const {
+        if (!fitness_value_.has_value()) {
+            throw UndefinedFitnessException();
+        }
+
+        return fitness_value_.value();
+    }
 }
 
 #endif
