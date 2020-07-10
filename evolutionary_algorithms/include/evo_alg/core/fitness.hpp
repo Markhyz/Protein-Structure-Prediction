@@ -1,5 +1,5 @@
-#ifndef GUARD_H_FITNESS
-#define GUARD_H_FITNESS
+#ifndef GUARD_H_EVO_ALG_FITNESS
+#define GUARD_H_EVO_ALG_FITNESS
 
 #include "../commons.hpp"
 #include "genotype.hpp"

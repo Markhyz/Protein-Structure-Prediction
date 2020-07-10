@@ -1,5 +1,5 @@
-#ifndef GUARD_H_GENOTYPE
-#define GUARD_H_GENOTYPE
+#ifndef GUARD_H_EVO_ALG_GENOTYPE
+#define GUARD_H_EVO_ALG_GENOTYPE
 
 #include "../commons.hpp"
 

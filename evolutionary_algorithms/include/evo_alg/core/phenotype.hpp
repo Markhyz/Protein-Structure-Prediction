@@ -1,5 +1,5 @@
-#ifndef GUARD_H_PHENOTYPE
-#define GUARD_H_PHENOTYPE
+#ifndef GUARD_H_EVO_ALG_PHENOTYPE
+#define GUARD_H_EVO_ALG_PHENOTYPE
 
 #include "../commons.hpp"
 #include "fitness.hpp"

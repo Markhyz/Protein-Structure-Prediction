@@ -1,5 +1,5 @@
-#ifndef GUARD_H_TYPES
-#define GUARD_H_TYPES
+#ifndef GUARD_H_EVO_ALG_TYPES
+#define GUARD_H_EVO_ALG_TYPES
 
 #include <cstddef>
 #include <tuple>

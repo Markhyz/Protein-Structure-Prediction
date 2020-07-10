@@ -1,5 +1,5 @@
-#ifndef GUARD_H_POPULATION
-#define GUARD_H_POPULATION
+#ifndef GUARD_H_EVO_ALG_POPULATION
+#define GUARD_H_EVO_ALG_POPULATION
 
 #include "../commons.hpp"
 #include "individual.hpp"
