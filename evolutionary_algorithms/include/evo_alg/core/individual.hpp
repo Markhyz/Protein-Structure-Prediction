@@ -1,8 +1,7 @@
 #ifndef GUARD_H_INDIVIDUAL
 #define GUARD_H_INDIVIDUAL
 
-#include "../../commons/include/macros.hpp"
-#include "../../commons/include/types.hpp"
+#include "../commons.hpp"
 #include "genotype.hpp"
 #include "phenotype.hpp"
 

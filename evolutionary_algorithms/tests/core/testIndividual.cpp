@@ -1,10 +1,9 @@
-#include "../include/fitness.hpp"
-#include "../include/individual.hpp"
+#include <evo_alg/core.hpp>
 
 #include <memory>
 #include <numeric>
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 using namespace EvoAlg;
 

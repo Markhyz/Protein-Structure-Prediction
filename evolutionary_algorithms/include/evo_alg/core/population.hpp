@@ -1,8 +1,8 @@
 #ifndef GUARD_H_POPULATION
 #define GUARD_H_POPULATION
 
-#include "../../commons/include/macros.hpp"
-#include "../include/individual.hpp"
+#include "../commons.hpp"
+#include "individual.hpp"
 
 #include <algorithm>
 

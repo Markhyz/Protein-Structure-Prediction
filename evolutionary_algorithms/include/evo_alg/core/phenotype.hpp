@@ -1,7 +1,7 @@
 #ifndef GUARD_H_PHENOTYPE
 #define GUARD_H_PHENOTYPE
 
-#include "../../commons/include/macros.hpp"
+#include "../commons.hpp"
 #include "fitness.hpp"
 
 #include <optional>

@@ -1,10 +1,9 @@
 #ifndef GUARD_H_FITNESS
 #define GUARD_H_FITNESS
 
-#include "../../commons/include/macros.hpp"
-#include "../../commons/include/types.hpp"
-
+#include "../commons.hpp"
 #include "genotype.hpp"
+
 #include <vector>
 
 namespace EvoAlg {
