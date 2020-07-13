@@ -1,13 +1,13 @@
 #ifndef GUARD_H_EVO_ALG_PHENOTYPE
 #define GUARD_H_EVO_ALG_PHENOTYPE
 
-#include "../commons.hpp"
+#include "../commons/macros.hpp"
 #include "fitness.hpp"
 
 #include <optional>
 #include <stdexcept>
 
-namespace EvoAlg {
+namespace evo_alg {
     template <typename... ChromosomeTypes>
     class Phenotype {
       public:

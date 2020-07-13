@@ -1,12 +1,13 @@
 #ifndef GUARD_H_EVO_ALG_FITNESS
 #define GUARD_H_EVO_ALG_FITNESS
 
-#include "../commons.hpp"
+#include "../commons/macros.hpp"
+
 #include "genotype.hpp"
 
 #include <vector>
 
-namespace EvoAlg {
+namespace evo_alg {
     template <typename... ChromosomeTypes>
     class AbstractFitnessFunction {
       public:

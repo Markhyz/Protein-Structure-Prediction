@@ -1,12 +1,12 @@
 #ifndef GUARD_H_EVO_ALG_POPULATION
 #define GUARD_H_EVO_ALG_POPULATION
 
-#include "../commons.hpp"
+#include "../commons/macros.hpp"
 #include "individual.hpp"
 
 #include <algorithm>
 
-namespace EvoAlg {
+namespace evo_alg {
     template <class IndividualType>
     class Population {
       public:

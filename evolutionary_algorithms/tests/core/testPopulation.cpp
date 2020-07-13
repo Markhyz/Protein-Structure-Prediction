@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace EvoAlg;
+using namespace evo_alg;
 
 class SimpleFitness : public AbstractFitnessFunction<int> {
   public:

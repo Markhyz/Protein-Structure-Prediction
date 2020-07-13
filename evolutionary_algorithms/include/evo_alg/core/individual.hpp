@@ -1,13 +1,14 @@
 #ifndef GUARD_H_EVO_ALG_INDIVIDUAL
 #define GUARD_H_EVO_ALG_INDIVIDUAL
 
-#include "../commons.hpp"
+#include "../commons/macros.hpp"
+#include "../commons/types.hpp"
 #include "genotype.hpp"
 #include "phenotype.hpp"
 
 #include <utility>
 
-namespace EvoAlg {
+namespace evo_alg {
     template <typename... ChromosomeTypes>
     class Individual {
       public:

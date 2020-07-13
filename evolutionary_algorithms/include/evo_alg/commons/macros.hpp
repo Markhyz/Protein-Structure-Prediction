@@ -1,6 +1,7 @@
 #ifndef GUARD_H_EVO_ALG_MACROS
 #define GUARD_H_EVO_ALG_MACROS
 
+#include <cassert>
 #include <memory>
 #include <type_traits>
 

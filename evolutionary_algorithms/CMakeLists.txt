@@ -8,6 +8,8 @@ add_library(evo_alg INTERFACE)
 target_include_directories(evo_alg INTERFACE include)
 target_compile_features(evo_alg INTERFACE cxx_std_17)
 
+add_subdirectory(src)
+
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     add_subdirectory(tests)
 endif()

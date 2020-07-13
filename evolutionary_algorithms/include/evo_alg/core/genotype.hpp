@@ -1,7 +1,8 @@
 #ifndef GUARD_H_EVO_ALG_GENOTYPE
 #define GUARD_H_EVO_ALG_GENOTYPE
 
-#include "../commons.hpp"
+#include "../commons/macros.hpp"
+#include "../commons/types.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -9,7 +10,7 @@
 #include <variant>
 #include <vector>
 
-namespace EvoAlg {
+namespace evo_alg {
     template <typename... ChromosomeTypes>
     class Genotype {
       public:
