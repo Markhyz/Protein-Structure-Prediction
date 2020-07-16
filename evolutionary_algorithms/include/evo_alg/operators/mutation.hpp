@@ -5,9 +5,9 @@
 
 namespace evo_alg {
     namespace mutator {
-        real_chromosome_t polynomial(real_chromosome_t& chromosome, double pr, std::vector<std::pair<int, int>> bounds,
+        real_individual_t polynomial(real_individual_t& individual, double pr, std::vector<std::pair<int, int>> bounds,
                                      uint32_t n);
-        binary_chromosome_t bitFlip(binary_chromosome_t& chromosome, double pr);
+        binary_individual_t bitFlip(binary_individual_t& individual, double pr);
 
     }
 }

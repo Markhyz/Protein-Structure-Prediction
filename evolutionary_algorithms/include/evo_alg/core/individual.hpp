@@ -15,18 +15,26 @@ namespace evo_alg {
         POINTER_ALIAS(Individual)
 
         Individual();
-        Individual(typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr fitness,
+        Individual(typename FitnessFunction<ChromosomeTypes...>::const_shared_ptr fitness,
                    std::vector<ChromosomeTypes> const&... chromosomes);
 
         void evaluateFitness();
 
         template <size_t ChromosomeIndex = 0>
-        std::vector<NthType<ChromosomeIndex, ChromosomeTypes...>> getChromosome() const;
+        std::vector<types::NthType<ChromosomeIndex, ChromosomeTypes...>> getChromosome() const;
 
-        typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr getFitnessFunction() const;
-        typename AbstractFitnessFunction<ChromosomeTypes...>::fitness_t const& getFitnessValue() const;
+        typename FitnessFunction<ChromosomeTypes...>::const_shared_ptr getFitnessFunction() const;
+        typename FitnessFunction<ChromosomeTypes...>::fitness_t const& getFitnessValue() const;
 
-        template <size_t ChromosomeIndex, typename... Args>
+        template <size_t ChromosomeIndex = 0>
+        std::vector<std::pair<types::NthType<ChromosomeIndex, ChromosomeTypes...>,
+                              types::NthType<ChromosomeIndex, ChromosomeTypes...>>> const
+        getBounds() const;
+
+        template <size_t ChromosomeIndex = 0, typename... Args>
+        void setBounds(Args&&... args);
+
+        template <size_t ChromosomeIndex = 0, typename... Args>
         void setChromosome(Args&&... args);
 
       private:
@@ -38,9 +46,8 @@ namespace evo_alg {
     Individual<ChromosomeTypes...>::Individual(){};
 
     template <typename... ChromosomeTypes>
-    Individual<ChromosomeTypes...>::Individual(
-        typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr fitness,
-        std::vector<ChromosomeTypes> const&... chromosomes)
+    Individual<ChromosomeTypes...>::Individual(typename FitnessFunction<ChromosomeTypes...>::const_shared_ptr fitness,
+                                               std::vector<ChromosomeTypes> const&... chromosomes)
         : genotype_(chromosomes...), phenotype_(fitness){};
 
     template <typename... ChromosomeTypes>
@@ -50,20 +57,35 @@ namespace evo_alg {
 
     template <typename... ChromosomeTypes>
     template <size_t ChromosomeIndex>
-    std::vector<NthType<ChromosomeIndex, ChromosomeTypes...>> Individual<ChromosomeTypes...>::getChromosome() const {
+    std::vector<types::NthType<ChromosomeIndex, ChromosomeTypes...>>
+    Individual<ChromosomeTypes...>::getChromosome() const {
         return genotype_.template getChromosome<ChromosomeIndex>();
     }
 
     template <typename... ChromosomeTypes>
-    typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr
+    typename FitnessFunction<ChromosomeTypes...>::const_shared_ptr
     Individual<ChromosomeTypes...>::getFitnessFunction() const {
         return phenotype_.getFitnessFunction();
     }
 
     template <typename... ChromosomeTypes>
-    typename AbstractFitnessFunction<ChromosomeTypes...>::fitness_t const&
+    typename FitnessFunction<ChromosomeTypes...>::fitness_t const&
     Individual<ChromosomeTypes...>::getFitnessValue() const {
         return phenotype_.getFitnessValue();
+    }
+
+    template <typename... ChromosomeTypes>
+    template <size_t ChromosomeIndex>
+    std::vector<std::pair<types::NthType<ChromosomeIndex, ChromosomeTypes...>,
+                          types::NthType<ChromosomeIndex, ChromosomeTypes...>>> const
+    Individual<ChromosomeTypes...>::getBounds() const {
+        return phenotype_.template getBounds<ChromosomeIndex>();
+    }
+
+    template <typename... ChromosomeTypes>
+    template <size_t ChromosomeIndex, typename... Args>
+    void Individual<ChromosomeTypes...>::setBounds(Args&&... args) {
+        phenotype_.template setBounds<ChromosomeIndex>(std::forward<Args>(args)...);
     }
 
     template <typename... ChromosomeTypes>

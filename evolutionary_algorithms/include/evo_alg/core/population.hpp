@@ -7,57 +7,69 @@
 #include <algorithm>
 
 namespace evo_alg {
-    template <class IndividualType>
+    template <typename... ChromosomeTypes>
     class Population {
+      public:
+        Population() = delete;
+    };
+
+    template <typename... ChromosomeTypes>
+    class Population<Individual<ChromosomeTypes...>> {
       public:
         POINTER_ALIAS(Population)
 
         Population();
-        Population(std::vector<IndividualType> const& individuals);
-        Population(size_t pop_size);
+        Population(std::vector<Individual<ChromosomeTypes...>> const& individuals);
+        Population(size_t const pop_size);
 
         size_t getSize() const;
-        IndividualType const& getIndividual(size_t index) const;
+        Individual<ChromosomeTypes...> const& getIndividual(size_t const index) const;
 
-        void setIndividual(size_t index, IndividualType const& individual);
+        void setIndividual(size_t const index, Individual<ChromosomeTypes...> const& individual);
 
-        void appendIndividual(IndividualType const& Individual);
+        void appendIndividual(Individual<ChromosomeTypes...> const& Individual);
 
         void evaluateFitness();
 
-        IndividualType& operator[](size_t index);
-        IndividualType const& operator[](size_t index) const;
+        void resize(size_t const new_size);
+
+        Individual<ChromosomeTypes...>& operator[](size_t const index);
+        Individual<ChromosomeTypes...> const& operator[](size_t const index) const;
 
       private:
-        std::vector<IndividualType> population_;
+        std::vector<Individual<ChromosomeTypes...>> population_;
     };
 
-    template <class IndividualType>
-    Population<IndividualType>::Population(){};
+    template <typename... ChromosomeTypes>
+    Population<Individual<ChromosomeTypes...>>::Population(){};
 
-    template <class IndividualType>
-    Population<IndividualType>::Population(std::vector<IndividualType> const& individuals) : population_(individuals){};
+    template <typename... ChromosomeTypes>
+    Population<Individual<ChromosomeTypes...>>::Population(
+        std::vector<Individual<ChromosomeTypes...>> const& individuals)
+        : population_{individuals} {};
 
-    template <class IndividualType>
-    Population<IndividualType>::Population(size_t pop_size) : population_(pop_size){};
+    template <typename... ChromosomeTypes>
+    Population<Individual<ChromosomeTypes...>>::Population(size_t const pop_size) : population_{pop_size} {};
 
-    template <class IndividualType>
-    size_t Population<IndividualType>::getSize() const {
+    template <typename... ChromosomeTypes>
+    size_t Population<Individual<ChromosomeTypes...>>::getSize() const {
         return population_.size();
     }
 
-    template <class IndividualType>
-    IndividualType const& Population<IndividualType>::getIndividual(size_t index) const {
+    template <typename... ChromosomeTypes>
+    Individual<ChromosomeTypes...> const&
+    Population<Individual<ChromosomeTypes...>>::getIndividual(size_t const index) const {
         return (*this)[index];
     }
 
-    template <class IndividualType>
-    void Population<IndividualType>::setIndividual(size_t index, IndividualType const& individual) {
+    template <typename... ChromosomeTypes>
+    void Population<Individual<ChromosomeTypes...>>::setIndividual(size_t const index,
+                                                                   Individual<ChromosomeTypes...> const& individual) {
         (*this)[index] = individual;
     }
 
-    template <class IndividualType>
-    IndividualType& Population<IndividualType>::operator[](size_t index) {
+    template <typename... ChromosomeTypes>
+    Individual<ChromosomeTypes...>& Population<Individual<ChromosomeTypes...>>::operator[](size_t const index) {
         if (index >= population_.size()) {
             throw std::out_of_range("out of range access");
         }
@@ -65,8 +77,9 @@ namespace evo_alg {
         return population_[index];
     }
 
-    template <class IndividualType>
-    IndividualType const& Population<IndividualType>::operator[](size_t index) const {
+    template <typename... ChromosomeTypes>
+    Individual<ChromosomeTypes...> const&
+    Population<Individual<ChromosomeTypes...>>::operator[](size_t const index) const {
         if (index >= population_.size()) {
             throw std::out_of_range("out of range access");
         }
@@ -74,14 +87,21 @@ namespace evo_alg {
         return population_[index];
     }
 
-    template <class IndividualType>
-    void Population<IndividualType>::evaluateFitness() {
-        std::for_each(population_.begin(), population_.end(), [](IndividualType& ind) { ind.evaluateFitness(); });
+    template <typename... ChromosomeTypes>
+    void Population<Individual<ChromosomeTypes...>>::evaluateFitness() {
+        std::for_each(population_.begin(), population_.end(),
+                      [](Individual<ChromosomeTypes...>& ind) { ind.evaluateFitness(); });
     }
 
-    template <class IndividualType>
-    void Population<IndividualType>::appendIndividual(IndividualType const& individual) {
+    template <typename... ChromosomeTypes>
+    void
+    Population<Individual<ChromosomeTypes...>>::appendIndividual(Individual<ChromosomeTypes...> const& individual) {
         population_.push_back(individual);
+    }
+
+    template <typename... ChromosomeTypes>
+    void Population<Individual<ChromosomeTypes...>>::resize(size_t const new_size) {
+        population_.resize(new_size);
     }
 }
 

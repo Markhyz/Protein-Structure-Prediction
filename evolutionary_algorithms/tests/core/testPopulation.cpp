@@ -7,8 +7,10 @@
 
 using namespace evo_alg;
 
-class SimpleFitness : public AbstractFitnessFunction<int> {
+class SimpleFitness : public FitnessFunction<int> {
   public:
+    SimpleFitness(std::vector<std::pair<int, int>> bounds) : FitnessFunction<int>{bounds} {};
+
     virtual fitness_t operator()(Genotype<int> const& genotype) const {
         std::vector<int> v = genotype.getChromosome();
 
@@ -23,12 +25,17 @@ class SimpleFitness : public AbstractFitnessFunction<int> {
         return direction;
     }
 
+    virtual SimpleFitness* clone() const {
+        return new SimpleFitness(*this);
+    }
+
     std::vector<bool> direction{minimize};
 };
 
 class PopulationTest : public ::testing::Test {
   protected:
-    SimpleFitness::shared_ptr f{std::make_shared<SimpleFitness>()};
+    SimpleFitness::shared_ptr f{
+        std::make_shared<SimpleFitness>(std::vector<std::pair<int, int>>({{0, 1}, {0, 1}, {0, 1}}))};
     Individual<int> individual_1{f, {10, 20, 123, 40}};
     Individual<int> individual_2{f, {0, -5, 13}};
     Individual<int> individual_3{f, {1111, 10000, 200, 600, 50}};

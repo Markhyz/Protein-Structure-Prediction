@@ -7,10 +7,10 @@
 
 namespace evo_alg {
     namespace recombinator {
-        std::pair<real_chromosome_t, real_chromosome_t> sbx(real_chromosome_t& parent_1, real_chromosome_t& parent_2,
-                                                            uint32_t n, double pr = 0.5);
-        std::pair<binary_chromosome_t, binary_chromosome_t> onePoint(binary_chromosome_t& parent_1,
-                                                                     binary_chromosome_t& parent_2);
+        std::pair<real_individual_t, real_individual_t> sbx(real_individual_t& parent_1, real_individual_t& parent_2,
+                                                            uint32_t const n, double const pr = 0.5);
+        std::pair<binary_individual_t, binary_individual_t> onePoint(binary_individual_t& parent_1,
+                                                                     binary_individual_t& parent_2);
 
     }
 }

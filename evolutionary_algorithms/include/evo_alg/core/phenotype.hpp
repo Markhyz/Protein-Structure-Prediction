@@ -21,16 +21,24 @@ namespace evo_alg {
         };
 
         Phenotype();
-        Phenotype(typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr const& fitness);
+        Phenotype(typename FitnessFunction<ChromosomeTypes...>::const_shared_ptr const& fitness);
 
         void evaluateFitness(Genotype<ChromosomeTypes...> const& genotype);
 
-        typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr getFitnessFunction() const;
-        typename AbstractFitnessFunction<ChromosomeTypes...>::fitness_t const& getFitnessValue() const;
+        typename FitnessFunction<ChromosomeTypes...>::const_shared_ptr getFitnessFunction() const;
+        typename FitnessFunction<ChromosomeTypes...>::fitness_t const& getFitnessValue() const;
+
+        template <size_t ChromosomeIndex = 0>
+        std::vector<std::pair<types::NthType<ChromosomeIndex, ChromosomeTypes...>,
+                              types::NthType<ChromosomeIndex, ChromosomeTypes...>>> const
+        getBounds() const;
+
+        template <size_t ChromosomeIndex = 0, typename... Args>
+        void setBounds(Args&&... args);
 
       private:
-        typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr fitness_;
-        std::optional<typename AbstractFitnessFunction<ChromosomeTypes...>::fitness_t> fitness_value_;
+        typename FitnessFunction<ChromosomeTypes...>::shared_ptr fitness_;
+        std::optional<typename FitnessFunction<ChromosomeTypes...>::fitness_t> fitness_value_;
     };
 
     template <typename... ChromosomeTypes>
@@ -38,8 +46,8 @@ namespace evo_alg {
 
     template <typename... ChromosomeTypes>
     Phenotype<ChromosomeTypes...>::Phenotype(
-        typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr const& fitness)
-        : fitness_(fitness){};
+        typename FitnessFunction<ChromosomeTypes...>::const_shared_ptr const& fitness)
+        : fitness_(fitness->clone()){};
 
     template <typename... ChromosomeTypes>
     void Phenotype<ChromosomeTypes...>::evaluateFitness(Genotype<ChromosomeTypes...> const& genotype) {
@@ -47,19 +55,33 @@ namespace evo_alg {
     }
 
     template <typename... ChromosomeTypes>
-    typename AbstractFitnessFunction<ChromosomeTypes...>::const_shared_ptr
+    typename FitnessFunction<ChromosomeTypes...>::const_shared_ptr
     Phenotype<ChromosomeTypes...>::getFitnessFunction() const {
         return fitness_;
     }
 
     template <typename... ChromosomeTypes>
-    typename AbstractFitnessFunction<ChromosomeTypes...>::fitness_t const&
+    typename FitnessFunction<ChromosomeTypes...>::fitness_t const&
     Phenotype<ChromosomeTypes...>::getFitnessValue() const {
         if (!fitness_value_.has_value()) {
             throw UndefinedFitnessException();
         }
 
         return fitness_value_.value();
+    }
+
+    template <typename... ChromosomeTypes>
+    template <size_t ChromosomeIndex>
+    std::vector<std::pair<types::NthType<ChromosomeIndex, ChromosomeTypes...>,
+                          types::NthType<ChromosomeIndex, ChromosomeTypes...>>> const
+    Phenotype<ChromosomeTypes...>::getBounds() const {
+        return fitness_->template getBounds<ChromosomeIndex>();
+    }
+
+    template <typename... ChromosomeTypes>
+    template <size_t ChromosomeIndex, typename... Args>
+    void Phenotype<ChromosomeTypes...>::setBounds(Args&&... args) {
+        fitness_->template setBounds<ChromosomeIndex>(std::forward<Args>(args)...);
     }
 }
 

@@ -4,7 +4,11 @@
 #include <cstddef>
 #include <tuple>
 
-template <std::size_t N, typename... Ts>
-using NthType = typename std::tuple_element<N, std::tuple<Ts...>>::type;
+namespace evo_alg {
+    namespace types {
+        template <std::size_t N, typename... Ts>
+        using NthType = typename std::tuple_element<N, std::tuple<Ts...>>::type;
+    }
+}
 
 #endif

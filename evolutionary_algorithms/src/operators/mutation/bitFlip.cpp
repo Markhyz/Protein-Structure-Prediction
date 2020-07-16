@@ -3,17 +3,17 @@
 
 namespace evo_alg {
     namespace mutator {
-        binary_chromosome_t bitFlip(binary_chromosome_t& chromosome, double pr) {
-            binary_chromosome_t new_chromosome(chromosome);
+        binary_individual_t bitFlip(binary_individual_t& individual, double pr) {
+            binary_individual_t new_individual(individual);
 
-            for (size_t index = 0; index < chromosome.size(); ++index) {
+            for (size_t index = 0; index < individual.getChromosome().size(); ++index) {
                 double const cur_pr = utils::uniform_prob_gen();
                 if (cur_pr < pr) {
-                    new_chromosome[index] = !new_chromosome[index];
+                    new_individual.setChromosome(index, !new_individual.getChromosome()[index]);
                 }
             }
 
-            return new_chromosome;
+            return new_individual;
         }
     }
 }
