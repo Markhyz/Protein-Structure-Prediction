@@ -12,7 +12,17 @@ namespace evo_alg {
         std::seed_seq ss{uint32_t(timeSeed & 0xffffffff), uint32_t(timeSeed >> 32)};
         std::mt19937_64 rng(ss);
         std::uniform_real_distribution<double> uniform_dist(0, 1);
-        auto uniform_prob_gen = []() { return uniform_dist(rng); };
+        auto uniformProbGen = []() { return uniform_dist(rng); };
+
+        auto numericLower = [](auto x, auto y, double const precision = eps) {
+            return x - y < (decltype(x)) - precision;
+        };
+        auto numericGreater = [](auto x, auto y, double const precision = eps) {
+            return x - y > (decltype(x)) precision;
+        };
+        auto numericEqual = [](auto x, auto y, double const precision = eps) {
+            return x - y <= (decltype(x)) precision && x - y >= (decltype(x)) - precision;
+        };
     }
 }
 

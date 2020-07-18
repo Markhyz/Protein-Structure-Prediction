@@ -8,6 +8,8 @@ namespace evo_alg {
     namespace types {
         template <std::size_t N, typename... Ts>
         using NthType = typename std::tuple_element<N, std::tuple<Ts...>>::type;
+
+        constexpr size_t invalid_index = (size_t) -1;
     }
 }
 

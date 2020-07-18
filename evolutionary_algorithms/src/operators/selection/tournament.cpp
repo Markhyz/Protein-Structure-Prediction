@@ -3,7 +3,7 @@
 
 namespace evo_alg {
     namespace selector {
-        size_t tournament(std::vector<double> individuals_fit, size_t size) {
+        size_t tournament(std::vector<double> const& individuals_fit, size_t const size) {
             std::vector<size_t> indexes(individuals_fit.size());
             std::iota(indexes.begin(), indexes.end(), 0);
             std::shuffle(indexes.begin(), indexes.end(), utils::rng);

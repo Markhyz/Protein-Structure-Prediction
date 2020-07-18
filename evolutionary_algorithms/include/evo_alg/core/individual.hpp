@@ -2,7 +2,7 @@
 #define GUARD_H_EVO_ALG_INDIVIDUAL
 
 #include "../commons/macros.hpp"
-#include "../commons/types.hpp"
+#include "../commons/utils.hpp"
 #include "genotype.hpp"
 #include "phenotype.hpp"
 
@@ -36,6 +36,9 @@ namespace evo_alg {
 
         template <size_t ChromosomeIndex = 0, typename... Args>
         void setChromosome(Args&&... args);
+
+        bool operator<(Individual<ChromosomeTypes...> ind) const;
+        bool operator>(Individual<ChromosomeTypes...> ind) const;
 
       private:
         Genotype<ChromosomeTypes...> genotype_;
@@ -92,6 +95,29 @@ namespace evo_alg {
     template <size_t ChromosomeIndex, typename... Args>
     void Individual<ChromosomeTypes...>::setChromosome(Args&&... args) {
         genotype_.template setChromosome<ChromosomeIndex>(std::forward<Args>(args)...);
+    }
+
+    template <typename... ChromosomeTypes>
+    bool Individual<ChromosomeTypes...>::operator<(Individual<ChromosomeTypes...> ind) const {
+        size_t const fitness_dimension = getFitnessFunction().getDimension();
+        if (fitness_dimension == 1) {
+            return utils::numericLower(getFitnessValue()[0], ind.getFitnessValue()[0]);
+        } else {
+            bool equal = true;
+            for (size_t index = 0; index < fitness_dimension; ++index) {
+                if (utils::numericGreater(getFitnessValue()[index], ind.getFitnessValue()[index]))
+                    return false;
+                if (utils::numericLower(getFitnessValue()[index], ind.getFitnessValue()[index]))
+                    equal = false;
+            }
+
+            return !equal;
+        }
+    }
+
+    template <typename... ChromosomeTypes>
+    bool Individual<ChromosomeTypes...>::operator>(Individual<ChromosomeTypes...> ind) const {
+        return ind < *this;
     }
 }
 

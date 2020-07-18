@@ -1,4 +1,3 @@
-# add_subdirectory(initialization)
 add_subdirectory(mutation)
 add_subdirectory(recombination)
 add_subdirectory(selection)

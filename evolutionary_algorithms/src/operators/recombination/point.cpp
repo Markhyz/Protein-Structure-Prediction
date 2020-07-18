@@ -3,8 +3,8 @@
 
 namespace evo_alg {
     namespace recombinator {
-        std::pair<binary_individual_t, binary_individual_t> onePoint(binary_individual_t& parent_1,
-                                                                     binary_individual_t& parent_2) {
+        std::pair<binary_individual_t, binary_individual_t> onePoint(binary_individual_t const& parent_1,
+                                                                     binary_individual_t const& parent_2) {
             size_t const chromosome_size = parent_1.getChromosome().size();
             binary_individual_t child_1(parent_1), child_2(parent_2);
             std::uniform_int_distribution<uint32_t> point_dist(1, (uint32_t) chromosome_size - 1);

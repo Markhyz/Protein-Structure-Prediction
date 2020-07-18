@@ -4,7 +4,7 @@
 
 namespace evo_alg {
     namespace selector {
-        size_t roulette(std::vector<double> individuals_fit) {
+        size_t roulette(std::vector<double> const& individuals_fit) {
             std::vector<double> corrected_fit(individuals_fit);
 
             double const min_fit = *std::min_element(individuals_fit.begin(), individuals_fit.end());
@@ -24,12 +24,12 @@ namespace evo_alg {
             std::iota(indexes.begin(), indexes.end(), 0);
             std::shuffle(indexes.begin(), indexes.end(), utils::rng);
 
-            double pr = utils::uniform_prob_gen();
+            double pr = utils::uniformProbGen();
             double cur_pr = 0;
             size_t selected_individual = individuals_fit.size();
             for (size_t const index : indexes) {
                 cur_pr += normalized_fit[index];
-                if (pr - cur_pr < utils::eps) {
+                if (cur_pr > pr) {
                     selected_individual = index;
                     break;
                 }

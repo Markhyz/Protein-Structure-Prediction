@@ -7,6 +7,10 @@
 namespace evo_alg {
     namespace initializator {
         template <typename GeneType>
+        using initialization_function_t = std::function<void(
+            Population<Individual<GeneType>>&, typename FitnessFunction<GeneType>::const_shared_ptr, size_t const)>;
+
+        template <typename GeneType>
         void uniformRandomInit(Population<Individual<GeneType>>& population,
                                typename FitnessFunction<GeneType>::const_shared_ptr fitness, size_t const size) {
             size_t const chromosome_size = fitness->getBounds().size();

@@ -5,9 +5,12 @@
 
 namespace evo_alg {
     namespace mutator {
-        real_individual_t polynomial(real_individual_t& individual, double pr, std::vector<std::pair<int, int>> bounds,
-                                     uint32_t n);
-        binary_individual_t bitFlip(binary_individual_t& individual, double pr);
+        template <class IndividualType>
+        using mutation_function_t =
+            std::function<std::vector<IndividualType>(std::vector<IndividualType> const&, double const)>;
+
+        real_individual_t polynomial(real_individual_t const& individual, double const pr, uint32_t const n = 20);
+        binary_individual_t bitFlip(binary_individual_t const& individual, double const pr);
 
     }
 }

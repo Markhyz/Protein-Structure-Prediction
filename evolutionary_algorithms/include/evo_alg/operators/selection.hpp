@@ -6,8 +6,11 @@
 
 namespace evo_alg {
     namespace selector {
-        size_t tournament(std::vector<double> individuals_fit, size_t size = 2);
-        size_t roulette(std::vector<double> individuals_fit);
+        template <class IndividualType>
+        using selection_function_t = std::function<size_t(std::vector<double> const&)>;
+
+        size_t tournament(std::vector<double> const& individuals_fit, size_t const& size = 2);
+        size_t roulette(std::vector<double> const& individuals_fit);
     }
 }
 
