@@ -9,7 +9,7 @@ namespace evo_alg {
         template <class IndividualType>
         using selection_function_t = std::function<size_t(std::vector<double> const&)>;
 
-        size_t tournament(std::vector<double> const& individuals_fit, size_t const& size = 2);
+        size_t tournament(std::vector<double> const& individuals_fit, size_t const size);
         size_t roulette(std::vector<double> const& individuals_fit);
     }
 }

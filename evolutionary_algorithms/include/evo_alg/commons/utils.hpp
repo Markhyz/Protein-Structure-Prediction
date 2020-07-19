@@ -8,21 +8,24 @@ namespace evo_alg {
     namespace utils {
         constexpr double eps = 1e-9;
 
-        int64_t timeSeed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-        std::seed_seq ss{uint32_t(timeSeed & 0xffffffff), uint32_t(timeSeed >> 32)};
-        std::mt19937_64 rng(ss);
-        std::uniform_real_distribution<double> uniform_dist(0, 1);
-        auto uniformProbGen = []() { return uniform_dist(rng); };
+        extern std::mt19937_64 rng;
 
-        auto numericLower = [](auto x, auto y, double const precision = eps) {
-            return x - y < (decltype(x)) - precision;
-        };
-        auto numericGreater = [](auto x, auto y, double const precision = eps) {
-            return x - y > (decltype(x)) precision;
-        };
-        auto numericEqual = [](auto x, auto y, double const precision = eps) {
-            return x - y <= (decltype(x)) precision && x - y >= (decltype(x)) - precision;
-        };
+        double uniformProbGen();
+
+        template <typename T>
+        bool numericLower(T const x, T const y, double const precision = eps) {
+            return x - y < (T) -precision;
+        }
+
+        template <typename T>
+        bool numericGreater(T const x, T const y, double const precision = eps) {
+            return x - y > (T) precision;
+        }
+
+        template <typename T>
+        bool numericEqual(T const x, T const y, double const precision = eps) {
+            return x - y <= (T) precision && x - y >= (T) -precision;
+        }
     }
 }
 

@@ -11,28 +11,23 @@ class SimpleFitness : public FitnessFunction<double> {
   public:
     SimpleFitness(std::vector<std::pair<double, double>> bounds) : FitnessFunction<double>{bounds} {};
 
-    virtual fitness_t operator()(Genotype<double> const& genotype) const {
+    virtual fitness_t operator()(Genotype<double> const& genotype) const override {
         std::vector<double> chromosome = genotype.getChromosome();
         double total = std::accumulate(chromosome.begin(), chromosome.end(), 0.0);
 
         return {total};
     }
 
-    virtual size_t getDimension() const {
-        return dimension;
+    virtual size_t getDimension() const override {
+        return dimension_;
     }
 
-    virtual std::vector<bool> const& getDirection() const {
-        return sign;
-    }
-
-    virtual SimpleFitness* clone() const {
+    virtual SimpleFitness* clone() const override {
         return new SimpleFitness(*this);
     }
 
   private:
-    size_t dimension = 1;
-    std::vector<bool> sign{minimize};
+    size_t dimension_ = 1;
 };
 
 class IndividualTest : public ::testing::Test {
@@ -79,7 +74,7 @@ class CompositeFitness : public FitnessFunction<double, bool, char> {
                      std::vector<std::pair<char, char>> bounds_3)
         : FitnessFunction<double, bool, char>{bounds_1, bounds_2, bounds_3} {};
 
-    virtual fitness_t operator()(Genotype<double, bool, char> const& genotype) const {
+    virtual fitness_t operator()(Genotype<double, bool, char> const& genotype) const override {
         std::vector<double> chromosome_1 = genotype.getChromosome<0>();
         std::vector<bool> chromosome_2 = genotype.getChromosome<1>();
         std::vector<char> chromosome_3 = genotype.getChromosome<2>();
@@ -93,21 +88,16 @@ class CompositeFitness : public FitnessFunction<double, bool, char> {
         return {total, (double) x * y};
     }
 
-    virtual size_t getDimension() const {
-        return dimension;
+    virtual size_t getDimension() const override {
+        return dimension_;
     }
 
-    virtual std::vector<bool> const& getDirection() const {
-        return sign;
-    }
-
-    virtual CompositeFitness* clone() const {
+    virtual CompositeFitness* clone() const override {
         return new CompositeFitness(*this);
     }
 
   private:
-    size_t dimension = 1;
-    std::vector<bool> sign{minimize};
+    size_t dimension_ = 1;
 };
 
 class CompositeIndividualTest : public ::testing::Test {

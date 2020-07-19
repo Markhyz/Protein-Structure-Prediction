@@ -11,25 +11,19 @@ class SimpleFitness : public FitnessFunction<int> {
   public:
     SimpleFitness(std::vector<std::pair<int, int>> bounds) : FitnessFunction<int>{bounds} {};
 
-    virtual fitness_t operator()(Genotype<int> const& genotype) const {
+    virtual fitness_t operator()(Genotype<int> const& genotype) const override {
         std::vector<int> v = genotype.getChromosome();
 
         return {std::accumulate(v.begin(), v.end(), 0.0)};
     }
 
-    virtual size_t getDimension() const {
+    virtual size_t getDimension() const override {
         return 1;
     }
 
-    virtual std::vector<bool> const& getDirection() const {
-        return direction;
-    }
-
-    virtual SimpleFitness* clone() const {
+    virtual SimpleFitness* clone() const override {
         return new SimpleFitness(*this);
     }
-
-    std::vector<bool> direction{minimize};
 };
 
 class PopulationTest : public ::testing::Test {

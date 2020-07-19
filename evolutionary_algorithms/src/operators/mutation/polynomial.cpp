@@ -5,24 +5,26 @@
 namespace evo_alg {
     namespace mutator {
         real_individual_t polynomial(real_individual_t const& individual, double const pr, uint32_t const n) {
-            real_individual_t new_individual(individual);
-            std::vector<std::pair<double, double>> bounds = individual.getBounds();
+            real_individual_t mutated_individual(individual);
 
-            for (size_t index = 0; index < individual.getChromosome().size(); ++index) {
+            real_chromosome_t individual_chromosome = individual.getChromosome();
+            real_chromosome_t mutated_chromosome = mutated_individual.getChromosome();
+            std::vector<std::pair<double, double>> bounds = individual.getBounds();
+            for (size_t index = 0; index < mutated_chromosome.size(); ++index) {
                 double const cur_pr = utils::uniformProbGen();
                 if (cur_pr < pr) {
                     double const u = utils::uniformProbGen();
                     double const delta = u < 0.5 ? pow(2 * u, 1.0 / (n + 1)) - 1 : 1 - pow((2 * (1 - u)), 1 / (n + 1));
-                    new_individual.setChromosome(
-                        index, new_individual.getChromosome()[index] +
-                                   delta * (u < 0.5 ? individual.getChromosome()[index] - bounds[index].first
-                                                    : bounds[index].second - individual.getChromosome()[index]));
+                    mutated_chromosome[index] +=
+                        delta * (u < 0.5 ? individual_chromosome[index] - bounds[index].first
+                                         : bounds[index].second - individual_chromosome[index]);
                 }
-                assert(new_individual.getChromosome()[index] - bounds[index].first > 0);
-                assert(bounds[index].second - new_individual.getChromosome()[index] > 0);
+                assert(utils::numericGreater(mutated_chromosome[index], bounds[index].first));
+                assert(utils::numericLower(mutated_chromosome[index], bounds[index].second));
             }
+            mutated_individual.setChromosome(mutated_chromosome);
 
-            return new_individual;
+            return mutated_individual;
         }
     }
 }

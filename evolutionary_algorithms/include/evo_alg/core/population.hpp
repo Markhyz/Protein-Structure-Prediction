@@ -5,6 +5,8 @@
 #include "../commons/types.hpp"
 #include "individual.hpp"
 
+#include <omp.h>
+
 #include <algorithm>
 
 namespace evo_alg {
@@ -106,7 +108,13 @@ namespace evo_alg {
 
     template <class IndividualType>
     void Population<IndividualType>::evaluateFitness() {
-        std::for_each(population_.begin(), population_.end(), [](IndividualType& ind) { ind.evaluateFitness(); });
+        // clang-format off
+
+        #pragma omp parallel for schedule(dynamic)
+        
+        //clang-format on
+        for (size_t index = 0; index < population_.size(); ++index)
+            population_[index].evaluateFitness();
     }
 
     template <class IndividualType>
