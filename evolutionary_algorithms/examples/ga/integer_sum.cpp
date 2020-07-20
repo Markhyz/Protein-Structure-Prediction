@@ -33,7 +33,7 @@ class IntegerSum : public evo_alg::FitnessFunction<bool> {
     size_t dimension_ = 1;
 };
 
-size_t tournament(std::vector<double> const& individuals_fit) {
+size_t tournamentSelection(std::vector<double> const& individuals_fit) {
     return evo_alg::selector::tournament(individuals_fit, 2);
 }
 
@@ -56,11 +56,10 @@ int main(int argc, char** argv) {
     evo_alg::Population<evo_alg::Individual<bool>> pop;
     evo_alg::Individual<bool> best_ind;
     tie(best_ind, pop) = evo_alg::ga<evo_alg::Individual<bool>, evo_alg::FitnessFunction<bool>>(
-        1000, 300, 1, fit, evo_alg::initializator::uniformRandomInit<bool>, tournament, evo_alg::recombinator::onePoint,
+        1000, 50, 1, fit, evo_alg::initializator::uniformRandomInit<bool>, tournamentSelection, evo_alg::recombinator::onePoint,
         0.95, evo_alg::mutator::bitFlip, 1 / (double) n, 1);
 
-    cout << true_res << endl;
-    cout << best_ind.getFitnessValue()[0] << endl;
+    cout << "true " << true_res << " / found " << best_ind.getFitnessValue()[0] << endl;
 
     return 0;
 }

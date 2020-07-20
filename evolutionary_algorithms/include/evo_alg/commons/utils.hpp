@@ -26,6 +26,16 @@ namespace evo_alg {
         bool numericEqual(T const x, T const y, double const precision = eps) {
             return x - y <= (T) precision && x - y >= (T) -precision;
         }
+
+        template <typename T>
+        bool numericLowerEqual(T const x, T const y, double const precision = eps) {
+            return numericLower(x, y, precision) || numericEqual(x, y, precision);
+        }
+
+        template <typename T>
+        bool numericGreaterEqual(T const x, T const y, double const precision = eps) {
+            return numericGreater(x, y, precision) || numericEqual(x, y, precision);
+        }
     }
 }
 

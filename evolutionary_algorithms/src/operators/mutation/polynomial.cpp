@@ -19,8 +19,8 @@ namespace evo_alg {
                         delta * (u < 0.5 ? individual_chromosome[index] - bounds[index].first
                                          : bounds[index].second - individual_chromosome[index]);
                 }
-                assert(utils::numericGreater(mutated_chromosome[index], bounds[index].first));
-                assert(utils::numericLower(mutated_chromosome[index], bounds[index].second));
+                assert(utils::numericGreaterEqual(mutated_chromosome[index], bounds[index].first));
+                assert(utils::numericLowerEqual(mutated_chromosome[index], bounds[index].second));
             }
             mutated_individual.setChromosome(mutated_chromosome);
 

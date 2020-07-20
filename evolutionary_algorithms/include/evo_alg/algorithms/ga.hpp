@@ -19,7 +19,8 @@ namespace evo_alg {
        typename selector::selection_function_t<IndividualType> const selection_fun,
        typename recombinator::crossover_function_t<IndividualType> const crossover_fun, double const crossover_pr,
        typename mutator::mutation_function_t<IndividualType> const mutation_fun, double const mutation_pr,
-       size_t const log_step = 0, size_t const convergence_interval = 100, double const convergence_eps = utils::eps) {
+       size_t const log_step = 0, double const convergence_threshold = NAN, size_t const convergence_interval = 100,
+       double const convergence_eps = utils::eps) {
 
         std::chrono::duration<double, std::milli> it_time, gen_time, eval_time;
         std::chrono::time_point<std::chrono::high_resolution_clock> t1, t2, tt1, tt2;
@@ -29,7 +30,7 @@ namespace evo_alg {
 
         IndividualType best_individual = population[population.getBestIndividuals()[0]];
         size_t convergence_level = 0;
-        for (size_t it = 0; it < iterations && convergence_level < convergence_interval; ++it) {
+        for (size_t it = 0; it < iterations; ++it) {
             tt1 = std::chrono::high_resolution_clock::now();
 
             std::vector<double> pop_fitness;
@@ -104,6 +105,12 @@ namespace evo_alg {
                 printf(" || times -> total: %.0fms | gen: %.0fms | eval: %.0fms\n", it_time.count(), gen_time.count(),
                        eval_time.count());
             }
+
+            if (!std::isnan(convergence_threshold) && utils::numericGreater(best_individual.getFitnessValue()[0], convergence_threshold))
+                break;
+
+            if (convergence_level >= convergence_interval)
+                break;
         }
 
         return {best_individual, population};
