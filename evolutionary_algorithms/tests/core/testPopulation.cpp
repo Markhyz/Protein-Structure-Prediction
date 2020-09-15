@@ -11,7 +11,7 @@ class SimpleFitness : public FitnessFunction<int> {
   public:
     SimpleFitness(std::vector<std::pair<int, int>> bounds) : FitnessFunction<int>{bounds} {};
 
-    virtual fitness_t operator()(Genotype<int> const& genotype) const override {
+    virtual fitness_t operator()(Genotype<int> const& genotype) override {
         std::vector<int> v = genotype.getChromosome();
 
         return {std::accumulate(v.begin(), v.end(), 0.0)};
@@ -33,7 +33,8 @@ class PopulationTest : public ::testing::Test {
     Individual<int> individual_1{f, {10, 20, 123, 40}};
     Individual<int> individual_2{f, {0, -5, 13}};
     Individual<int> individual_3{f, {1111, 10000, 200, 600, 50}};
-    Population<Individual<int>> population{{individual_1, individual_2, individual_3}};
+    std::vector<Individual<int>> individuals = {individual_1, individual_2, individual_3};
+    Population<Individual<int>> population{individuals};
 };
 
 TEST_F(PopulationTest, Initialize) {

@@ -2,6 +2,7 @@
 #include <evo_alg/core.hpp>
 #include <evo_alg/operators.hpp>
 
+#include <fstream>
 #include <iostream>
 
 using namespace std;
@@ -18,7 +19,7 @@ class IntegerSum : public evo_alg::FitnessFunction<bool> {
         return new IntegerSum(*this);
     }
 
-    fitness_t operator()(evo_alg::Genotype<bool> const& genotype) const override {
+    fitness_t operator()(evo_alg::Genotype<bool> const& genotype) override {
         vector<bool> chromosome = genotype.getChromosome();
         double result = 0.0;
         for (size_t i = 0; i < values_.size(); ++i)
@@ -55,11 +56,28 @@ int main(int argc, char** argv) {
 
     evo_alg::Population<evo_alg::Individual<bool>> pop;
     evo_alg::Individual<bool> best_ind;
-    tie(best_ind, pop) = evo_alg::ga<evo_alg::Individual<bool>, evo_alg::FitnessFunction<bool>>(
-        1000, 50, 1, fit, evo_alg::initializator::uniformRandomInit<bool>, tournamentSelection, evo_alg::recombinator::onePoint,
-        0.95, evo_alg::mutator::bitFlip, 1 / (double) n, 1);
+    vector<double> best_fit, mean_fit, diversity;
+    tie(best_ind, pop, best_fit, mean_fit, diversity) =
+        evo_alg::ga<evo_alg::Individual<bool>, evo_alg::FitnessFunction<bool>>(
+            1000, 50, 1, fit, evo_alg::initializator::uniformRandomInit<bool>, tournamentSelection,
+            evo_alg::recombinator::onePoint<bool>, 0.95, evo_alg::mutator::bitFlip, 1 / (double) n, 1);
 
     cout << "true " << true_res << " / found " << best_ind.getFitnessValue()[0] << endl;
+
+    ofstream fit_out("res.fit"), diver_out("res.diver");
+    diver_out << fixed;
+
+    fit_out << fixed;
+    fit_out.precision(9);
+    for (size_t index = 0; index < best_fit.size(); ++index) {
+        fit_out << index << " " << best_fit[index] << " " << mean_fit[index] << endl;
+    }
+
+    diver_out << fixed;
+    diver_out.precision(9);
+    for (size_t index = 0; index < diversity.size(); ++index) {
+        diver_out << index << " " << diversity[index] << endl;
+    }
 
     return 0;
 }

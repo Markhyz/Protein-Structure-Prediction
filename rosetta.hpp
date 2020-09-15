@@ -1,0 +1,12 @@
+#include <core/chemical/ChemicalManager.hh>
+#include <core/conformation/Residue.hh>
+#include <core/import_pose/import_pose.hh>
+#include <core/init/init.hh>
+#include <core/pose/Pose.hh>
+#include <core/pose/annotated_sequence.hh>
+#include <core/scoring/ScoreFunction.hh>
+#include <core/scoring/ScoreFunctionFactory.hh>
+#include <core/scoring/ScoreType.hh>
+#include <core/scoring/dssp/Dssp.hh>
+#include <core/scoring/rms_util.hh>
+#include <core/util/SwitchResidueTypeSet.hh>

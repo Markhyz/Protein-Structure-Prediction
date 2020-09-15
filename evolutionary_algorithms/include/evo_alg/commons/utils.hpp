@@ -6,7 +6,7 @@
 
 namespace evo_alg {
     namespace utils {
-        constexpr double eps = 1e-9;
+        constexpr double eps = 1e-15;
 
         extern std::mt19937_64 rng;
 

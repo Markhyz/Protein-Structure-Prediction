@@ -2,8 +2,6 @@
 #include "../../../include/evo_alg/commons/utils.hpp"
 #include "../../../include/evo_alg/operators/selection.hpp"
 
-#include <iostream>
-
 namespace evo_alg {
     namespace selector {
         size_t roulette(std::vector<double> const& individuals_fit) {
@@ -21,7 +19,7 @@ namespace evo_alg {
 
             std::vector<double> normalized_fit(corrected_fit);
             for (double& fit : normalized_fit) {
-                assert(fit >= utils::eps);
+                assert(utils::numericGreaterEqual(fit, utils::eps));
                 fit /= total_fit;
             }
 

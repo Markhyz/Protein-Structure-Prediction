@@ -9,6 +9,12 @@
 #include <vector>
 
 namespace evo_alg {
+    namespace fitness {
+        std::vector<double> linearScale(std::vector<double> const& fitness_values, double const c);
+        std::vector<double> linearNormalization(std::vector<double> const& fitness_values, double const min_value,
+                                                double const max_value);
+    }
+
     template <typename... GeneTypes>
     class FitnessFunction {
       public:
@@ -44,7 +50,7 @@ namespace evo_alg {
 
         virtual FitnessFunction* clone() const = 0;
 
-        virtual fitness_t operator()(Genotype<GeneTypes...> const& genotype) const = 0;
+        virtual fitness_t operator()(Genotype<GeneTypes...> const& genotype) = 0;
 
       private:
         std::vector<chromosome_bounds_t> bounds_;

@@ -11,13 +11,13 @@
 
 namespace evo_alg {
     template <class IndividualType>
-    class Population {
+    class PopulationBase {
       public:
-        POINTER_ALIAS(Population)
+        POINTER_ALIAS(PopulationBase)
 
-        Population();
-        Population(std::vector<IndividualType> const& individuals);
-        Population(size_t const pop_size);
+        PopulationBase();
+        PopulationBase(std::vector<IndividualType> const individuals);
+        PopulationBase(size_t const pop_size);
 
         size_t getSize() const;
         IndividualType const& getIndividual(size_t const index) const;
@@ -35,32 +35,54 @@ namespace evo_alg {
         IndividualType& operator[](size_t const index);
         IndividualType const& operator[](size_t const index) const;
 
-      private:
+      protected:
         std::vector<IndividualType> population_;
     };
 
     template <class IndividualType>
-    Population<IndividualType>::Population(){};
+    class Population : public PopulationBase<IndividualType> {
+      public:
+        POINTER_ALIAS(Population)
+
+        template <typename... Args>
+        Population(Args&&... args) : PopulationBase<IndividualType>(std::forward<Args>(args)...){};
+    };
+
+    template <class GeneType>
+    class Population<Individual<GeneType>> : public PopulationBase<Individual<GeneType>> {
+      public:
+        POINTER_ALIAS(Population)
+
+        template <typename... Args>
+        Population(Args&&... args) : PopulationBase<Individual<GeneType>>(std::forward<Args>(args)...){};
+
+        double getBestFitness() const;
+        double getMeanFitness() const;
+        double getPairwiseDiversity() const;
+    };
 
     template <class IndividualType>
-    Population<IndividualType>::Population(std::vector<IndividualType> const& individuals)
+    PopulationBase<IndividualType>::PopulationBase(){};
+
+    template <class IndividualType>
+    PopulationBase<IndividualType>::PopulationBase(std::vector<IndividualType> const individuals)
         : population_{individuals} {};
 
     template <class IndividualType>
-    Population<IndividualType>::Population(size_t const pop_size) : population_{pop_size} {};
+    PopulationBase<IndividualType>::PopulationBase(size_t const pop_size) : population_{pop_size} {};
 
     template <class IndividualType>
-    size_t Population<IndividualType>::getSize() const {
+    size_t PopulationBase<IndividualType>::getSize() const {
         return population_.size();
     }
 
     template <class IndividualType>
-    IndividualType const& Population<IndividualType>::getIndividual(size_t const index) const {
+    IndividualType const& PopulationBase<IndividualType>::getIndividual(size_t const index) const {
         return (*this)[index];
     }
 
     template <class IndividualType>
-    std::vector<size_t> Population<IndividualType>::getBestIndividuals() const {
+    std::vector<size_t> PopulationBase<IndividualType>::getBestIndividuals() const {
         std::vector<size_t> best_individuals;
         size_t best_individual = 0;
         for (size_t index = 1; index < population_.size(); ++index)
@@ -74,7 +96,7 @@ namespace evo_alg {
     }
 
     template <class IndividualType>
-    std::vector<size_t> Population<IndividualType>::getSortedIndividuals() const {
+    std::vector<size_t> PopulationBase<IndividualType>::getSortedIndividuals() const {
         std::vector<size_t> sorted_individuals(population_.size());
         std::iota(sorted_individuals.begin(), sorted_individuals.end(), 0);
         std::sort(sorted_individuals.rbegin(), sorted_individuals.rend(),
@@ -84,12 +106,12 @@ namespace evo_alg {
     }
 
     template <class IndividualType>
-    void Population<IndividualType>::setIndividual(size_t const index, IndividualType const& individual) {
+    void PopulationBase<IndividualType>::setIndividual(size_t const index, IndividualType const& individual) {
         (*this)[index] = individual;
     }
 
     template <class IndividualType>
-    IndividualType& Population<IndividualType>::operator[](size_t const index) {
+    IndividualType& PopulationBase<IndividualType>::operator[](size_t const index) {
         if (index >= population_.size()) {
             throw std::out_of_range("out of range access");
         }
@@ -98,7 +120,7 @@ namespace evo_alg {
     }
 
     template <class IndividualType>
-    IndividualType const& Population<IndividualType>::operator[](size_t const index) const {
+    IndividualType const& PopulationBase<IndividualType>::operator[](size_t const index) const {
         if (index >= population_.size()) {
             throw std::out_of_range("out of range access");
         }
@@ -107,24 +129,77 @@ namespace evo_alg {
     }
 
     template <class IndividualType>
-    void Population<IndividualType>::evaluateFitness() {
-        // clang-format off
+    void PopulationBase<IndividualType>::evaluateFitness() {
+        // // clang-format off
 
-        #pragma omp parallel for schedule(dynamic)
-        
-        //clang-format on
+        // #pragma omp parallel for schedule(dynamic)
+
+        // //clang-format on
         for (size_t index = 0; index < population_.size(); ++index)
             population_[index].evaluateFitness();
     }
 
     template <class IndividualType>
-    void Population<IndividualType>::appendIndividual(IndividualType const& individual) {
+    void PopulationBase<IndividualType>::appendIndividual(IndividualType const& individual) {
         population_.push_back(individual);
     }
 
     template <class IndividualType>
-    void Population<IndividualType>::resize(size_t const new_size) {
+    void PopulationBase<IndividualType>::resize(size_t const new_size) {
         population_.resize(new_size);
+    }
+
+    template <class GeneType>
+    double Population<Individual<GeneType>>::getBestFitness() const {
+        double best_fit = this->population_[0].getFitnessValue()[0];
+        for (size_t index = 1; index < this->population_.size(); ++index)
+            best_fit = std::max(best_fit, this->population_[index].getFitnessValue()[0]);
+
+        return best_fit;
+    }
+
+    template <class GeneType>
+    double Population<Individual<GeneType>>::getMeanFitness() const {
+        double total_fit = 0;
+        for (size_t index = 0; index < this->population_.size(); ++index)
+            total_fit += this->population_[index].getFitnessValue()[0];
+
+        return total_fit / (double) this->population_.size();
+    }
+
+    template <class GeneType>
+    double Population<Individual<GeneType>>::getPairwiseDiversity() const {
+        double diversity = 0;
+
+        std::vector<std::pair<GeneType, GeneType>> bounds = this->population_[0].getBounds();
+        double normalization_factor = 0;
+        for (size_t index = 0; index < bounds.size(); ++index)
+            normalization_factor += pow(bounds[index].second - bounds[index].first, 2);
+        normalization_factor = sqrt(normalization_factor);
+
+        std::vector<double> ind_dist(this->population_.size());
+
+        // clang-format off
+
+        #pragma omp parallel for schedule(dynamic)
+
+        //clang-format on
+        for (size_t index = 0; index < this->population_.size(); ++index) {
+            for (size_t index2 = index + 1; index2 < this->population_.size(); ++index2) {
+                std::vector<GeneType> chromosome_1 = this->population_[index].getChromosome();
+                std::vector<GeneType> chromosome_2 = this->population_[index2].getChromosome();
+                double pair_distance = 0;
+                for (size_t gene_index = 0; gene_index < bounds.size(); ++gene_index) {
+                    pair_distance += pow(chromosome_1[gene_index] - chromosome_2[gene_index], 2);
+                }
+                ind_dist[index] += sqrt(pair_distance);
+            }
+        }
+        diversity += std::accumulate(ind_dist.begin(), ind_dist.end(), 0.0);
+        diversity = (2 * diversity) / (double)(this->population_.size() * (this->population_.size() - 1));
+        diversity /= normalization_factor;
+
+        return diversity;
     }
 }
 

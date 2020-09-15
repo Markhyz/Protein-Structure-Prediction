@@ -2,6 +2,8 @@
 #include "../../../include/evo_alg/commons/utils.hpp"
 #include "../../../include/evo_alg/operators/mutation.hpp"
 
+#include <iostream>
+
 namespace evo_alg {
     namespace mutator {
         real_individual_t polynomial(real_individual_t const& individual, double const pr, uint32_t const n) {
@@ -19,6 +21,7 @@ namespace evo_alg {
                         delta * (u < 0.5 ? individual_chromosome[index] - bounds[index].first
                                          : bounds[index].second - individual_chromosome[index]);
                 }
+
                 assert(utils::numericGreaterEqual(mutated_chromosome[index], bounds[index].first));
                 assert(utils::numericLowerEqual(mutated_chromosome[index], bounds[index].second));
             }

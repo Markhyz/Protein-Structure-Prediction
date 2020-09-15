@@ -11,7 +11,7 @@ class SimpleFitness : public FitnessFunction<double> {
   public:
     SimpleFitness(std::vector<std::pair<double, double>> bounds) : FitnessFunction<double>{bounds} {};
 
-    virtual fitness_t operator()(Genotype<double> const& genotype) const override {
+    virtual fitness_t operator()(Genotype<double> const& genotype) override {
         std::vector<double> chromosome = genotype.getChromosome();
         double total = std::accumulate(chromosome.begin(), chromosome.end(), 0.0);
 
@@ -74,7 +74,7 @@ class CompositeFitness : public FitnessFunction<double, bool, char> {
                      std::vector<std::pair<char, char>> bounds_3)
         : FitnessFunction<double, bool, char>{bounds_1, bounds_2, bounds_3} {};
 
-    virtual fitness_t operator()(Genotype<double, bool, char> const& genotype) const override {
+    virtual fitness_t operator()(Genotype<double, bool, char> const& genotype) override {
         std::vector<double> chromosome_1 = genotype.getChromosome<0>();
         std::vector<bool> chromosome_2 = genotype.getChromosome<1>();
         std::vector<char> chromosome_3 = genotype.getChromosome<2>();
@@ -172,7 +172,7 @@ TEST_F(CompositeIndividualTest, EvaluateFitness) {
 
 TEST_F(CompositeIndividualTest, ChangeChromosome) {
     std::vector<double> new_chromosome_1 = {10, 20, 30};
-    std::vector<bool> new_chromosome_2 = {1, 1, 1, 1, 1};
+    std::vector<bool> new_chromosome_2 = {1, 1, 1, 1, 1, 1};
 
     individual.setChromosome<1>(new_chromosome_2);
 
@@ -194,7 +194,7 @@ TEST_F(CompositeIndividualTest, ChangeChromosome) {
     std::vector<double> total = individual.getFitnessValue();
 
     EXPECT_DOUBLE_EQ(60, total[0]);
-    EXPECT_EQ(30, total[1]);
+    EXPECT_EQ(36, total[1]);
 }
 
 TEST_F(CompositeIndividualTest, ChangeBounds) {

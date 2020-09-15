@@ -32,3 +32,8 @@ add_executable(rosenbrock rosenbrock.cpp)
 target_link_libraries(rosenbrock PRIVATE evo_alg)
 target_compile_features(rosenbrock PRIVATE cxx_std_17)
 target_compile_options(rosenbrock PRIVATE ${CXX_FLAGS})
+
+add_executable(schwefel schwefel.cpp)
+target_link_libraries(schwefel PRIVATE evo_alg)
+target_compile_features(schwefel PRIVATE cxx_std_17)
+target_compile_options(schwefel PRIVATE ${CXX_FLAGS})

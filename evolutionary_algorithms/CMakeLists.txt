@@ -8,7 +8,7 @@ add_subdirectory(src)
 
 add_library(evo_alg INTERFACE)
 target_include_directories(evo_alg INTERFACE include)
-target_link_libraries(evo_alg INTERFACE operators commons)
+target_link_libraries(evo_alg INTERFACE operators commons core)
 target_compile_features(evo_alg INTERFACE cxx_std_17)
 
 find_package(OpenMP)

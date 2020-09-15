@@ -2,10 +2,13 @@
 #include <evo_alg/core.hpp>
 #include <evo_alg/operators.hpp>
 
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 
 using namespace std;
+
+double max_value = 0;
 
 class RosenbrockFunction : public evo_alg::FitnessFunction<double> {
   public:
@@ -19,13 +22,23 @@ class RosenbrockFunction : public evo_alg::FitnessFunction<double> {
         return new RosenbrockFunction(*this);
     }
 
-    fitness_t operator()(evo_alg::Genotype<double> const& genotype) const override {
+    double getTrueValue(vector<double> values) {
+        double result = 0.0;
+        for (size_t i = 0; i < values.size() - 1; ++i)
+            result += 100 * pow(values[i + 1] - pow(values[i], 2), 2) + pow(values[i] - 1, 2);
+
+        return result;
+    }
+
+    fitness_t operator()(evo_alg::Genotype<double> const& genotype) override {
         vector<double> chromosome = genotype.getChromosome();
         double result = 0.0;
         for (size_t i = 0; i < chromosome.size() - 1; ++i)
             result += 100 * pow(chromosome[i + 1] - pow(chromosome[i], 2), 2) + pow(chromosome[i] - 1, 2);
 
-        return {-result};
+        max_value = max(max_value, result);
+
+        return {1 - result / max_value};
     }
 
   private:
@@ -33,7 +46,7 @@ class RosenbrockFunction : public evo_alg::FitnessFunction<double> {
 };
 
 evo_alg::real_individual_t polynomialMutation(evo_alg::real_individual_t const& individual, double const pr) {
-    return evo_alg::mutator::polynomial(individual, pr, 60);
+    return evo_alg::mutator::polynomial(individual, pr, 40);
 }
 
 pair<evo_alg::real_individual_t, evo_alg::real_individual_t> sbxCrossover(evo_alg::real_individual_t const& parent_1,
@@ -48,20 +61,38 @@ size_t tournamentSelection(std::vector<double> const& individuals_fit) {
 int main(int argc, char** argv) {
     size_t n = argc > 1 ? stoul(argv[1]) : 30;
 
-    evo_alg::FitnessFunction<double>::const_shared_ptr fit(new RosenbrockFunction(n));
+    evo_alg::FitnessFunction<double>::shared_ptr fit(new RosenbrockFunction(n));
 
     evo_alg::Population<evo_alg::Individual<double>> pop;
     evo_alg::Individual<double> best_ind;
-    tie(best_ind, pop) = evo_alg::ga<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(
-        2000, 100, 1, fit, evo_alg::initializator::uniformRandomInit<double>, tournamentSelection, sbxCrossover, 0.95,
-        polynomialMutation, 1 / (double) n, 1);
+    vector<double> best_fit, mean_fit, diversity;
+    tie(best_ind, pop, best_fit, mean_fit, diversity) =
+        evo_alg::ga<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(
+            1000, 50, 0, fit, evo_alg::initializator::uniformRandomInit<double>, evo_alg::selector::roulette,
+            sbxCrossover, 0.95, polynomialMutation, 1 / (double) n, 1);
 
     evo_alg::Individual<double> true_ind(fit, vector<double>(n, 1));
     true_ind.evaluateFitness();
 
     cout << fixed;
     cout.precision(9);
-    cout << "true " << true_ind.getFitnessValue()[0] << " / found " << best_ind.getFitnessValue()[0] << endl;
+    cout << "true " << true_ind.getFitnessValue()[0] << " / found " << best_ind.getFitnessValue()[0] << " "
+         << dynamic_pointer_cast<RosenbrockFunction>(fit)->getTrueValue(best_ind.getChromosome()) << endl;
+
+    ofstream fit_out("res.fit"), diver_out("res.diver");
+    diver_out << fixed;
+
+    fit_out << fixed;
+    fit_out.precision(9);
+    for (size_t index = 0; index < best_fit.size(); ++index) {
+        fit_out << index << " " << best_fit[index] << " " << mean_fit[index] << endl;
+    }
+
+    diver_out << fixed;
+    diver_out.precision(9);
+    for (size_t index = 0; index < diversity.size(); ++index) {
+        diver_out << index << " " << diversity[index] << endl;
+    }
 
     return 0;
 }

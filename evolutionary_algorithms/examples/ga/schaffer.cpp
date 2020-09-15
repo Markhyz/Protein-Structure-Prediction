@@ -2,6 +2,7 @@
 #include <evo_alg/core.hpp>
 #include <evo_alg/operators.hpp>
 
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 
@@ -19,7 +20,7 @@ class SchafferFunction : public evo_alg::FitnessFunction<double> {
         return new SchafferFunction(*this);
     }
 
-    fitness_t operator()(evo_alg::Genotype<double> const& genotype) const override {
+    fitness_t operator()(evo_alg::Genotype<double> const& genotype) override {
         vector<double> chromosome = genotype.getChromosome();
         double x1 = chromosome[0], x2 = chromosome[1];
         double result = 0.5 + (pow(sin(x1 * x1 - x2 * x2), 2) - 0.5) / pow(1 + 0.001 * (x1 * x1 + x2 * x2), 2);
@@ -49,9 +50,11 @@ int main() {
 
     evo_alg::Population<evo_alg::Individual<double>> pop;
     evo_alg::Individual<double> best_ind;
-    tie(best_ind, pop) = evo_alg::ga<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(
-        2000, 20, 1, fit, evo_alg::initializator::uniformRandomInit<double>, tournamentSelection, sbxCrossover, 0.95,
-        polynomialMutation, 1 / 2.0, 1, NAN, 300);
+    vector<double> best_fit, mean_fit, diversity;
+    tie(best_ind, pop, best_fit, mean_fit, diversity) =
+        evo_alg::ga<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(
+            2000, 20, 0, fit, evo_alg::initializator::uniformRandomInit<double>, evo_alg::selector::roulette,
+            sbxCrossover, 0.95, polynomialMutation, 0.05, 1, NAN, 300);
 
     evo_alg::Individual<double> true_ind(fit, vector<double>(2, 0));
     true_ind.evaluateFitness();
@@ -59,6 +62,21 @@ int main() {
     cout << fixed;
     cout.precision(9);
     cout << "true " << true_ind.getFitnessValue()[0] << " / found " << best_ind.getFitnessValue()[0] << endl;
+
+    ofstream fit_out("res.fit"), diver_out("res.diver");
+    diver_out << fixed;
+
+    fit_out << fixed;
+    fit_out.precision(9);
+    for (size_t index = 0; index < best_fit.size(); ++index) {
+        fit_out << index << " " << best_fit[index] << " " << mean_fit[index] << endl;
+    }
+
+    diver_out << fixed;
+    diver_out.precision(9);
+    for (size_t index = 0; index < diversity.size(); ++index) {
+        diver_out << index << " " << diversity[index] << endl;
+    }
 
     return 0;
 }
