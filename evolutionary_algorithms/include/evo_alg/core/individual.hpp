@@ -14,6 +14,8 @@ namespace evo_alg {
       public:
         POINTER_ALIAS(Individual)
 
+        using gene_types = std::tuple<GeneTypes...>;
+
         Individual();
         Individual(typename FitnessFunction<GeneTypes...>::const_shared_ptr fitness,
                    std::vector<GeneTypes> const&... chromosomes);

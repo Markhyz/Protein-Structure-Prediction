@@ -21,14 +21,21 @@ namespace evo_alg {
        typename selector::selection_function_t<IndividualType> const selection_fun,
        typename recombinator::crossover_function_t<IndividualType> const crossover_fun, double const crossover_pr,
        typename mutator::mutation_function_t<IndividualType> const mutation_fun, double const mutation_pr,
-       size_t const log_step = 0, double const convergence_threshold = NAN, size_t const convergence_interval = 100,
+       double const generation_gap = 1.0, Population<IndividualType> const initial_pop = {}, size_t const log_step = 0,
+       double const convergence_threshold = NAN, size_t const convergence_interval = 100,
        double const convergence_eps = utils::eps) {
         std::vector<double> best_fit, mean_fit, diversity;
 
         std::chrono::duration<double, std::milli> it_time, gen_time, eval_time;
         std::chrono::time_point<std::chrono::high_resolution_clock> t1, t2, tt1, tt2;
 
-        Population<IndividualType> population = init_fun(fitness, pop_size);
+        Population<IndividualType> population;
+        if (pop_size - initial_pop.getSize() > 0) {
+            population = init_fun(fitness, pop_size - initial_pop.getSize());
+        }
+        for (size_t index = 0; index < initial_pop.getSize(); ++index)
+            population.appendIndividual({fitness, initial_pop[index].getChromosome()});
+
         population.evaluateFitness();
 
         best_fit.push_back(population.getBestFitness());
@@ -41,31 +48,26 @@ namespace evo_alg {
         for (size_t it = 0; it < iterations; ++it) {
             tt1 = std::chrono::high_resolution_clock::now();
 
-            if (elite_size == 0 && it >= iterations / 2) {
-                const std::vector<size_t> sorted_individuals = population.getSortedIndividuals();
-                population[sorted_individuals[pop_size - 1]] = best_individual;
-                elite_size = 1;
-            }
-
             std::vector<double> pop_fitness(pop_size);
             for (size_t index = 0; index < pop_size; ++index)
                 pop_fitness[index] = population.getIndividual(index).getFitnessValue()[0];
 
-            pop_fitness =
-                fitness::linearNormalization(pop_fitness, *std::min_element(pop_fitness.begin(), pop_fitness.end()),
-                                             *std::max_element(pop_fitness.begin(), pop_fitness.end()));
-            pop_fitness = fitness::linearScale(pop_fitness, c);
+            // pop_fitness =
+            //     fitness::linearNormalization(pop_fitness, *std::min_element(pop_fitness.begin(), pop_fitness.end()),
+            //                                  *std::max_element(pop_fitness.begin(), pop_fitness.end()));
+            // pop_fitness = fitness::linearScale(pop_fitness, c);
 
-            Population<IndividualType> new_population(pop_size);
+            Population<IndividualType> new_population(population);
+            std::vector<size_t> ind_indexes(pop_size);
+            std::iota(ind_indexes.begin(), ind_indexes.end(), 0);
+            std::shuffle(ind_indexes.begin(), ind_indexes.end(), utils::rng);
+
+            size_t generation_size = (size_t) pop_size * generation_gap;
 
             t1 = std::chrono::high_resolution_clock::now();
 
-            // clang-format off
-
-            #pragma omp parallel for schedule(dynamic)
-
-            //clang-format on
-            for (size_t index = 0; index < pop_size; index += 2) {
+#pragma omp parallel for schedule(dynamic)
+            for (size_t index = 0; index < generation_size; index += 2) {
                 size_t const parent_1 = selection_fun(pop_fitness);
 
                 std::vector<double> pop_fitness_2;
@@ -92,9 +94,9 @@ namespace evo_alg {
                 child_1 = mutation_fun(child_1, mutation_pr);
                 child_2 = mutation_fun(child_2, mutation_pr);
 
-                new_population[index] = child_1;
-                if (index + 1 < pop_size)
-                    new_population[index + 1] = child_2;
+                new_population[ind_indexes[index]] = child_1;
+                if (index + 1 < generation_size)
+                    new_population[ind_indexes[index + 1]] = child_2;
             }
             t2 = std::chrono::high_resolution_clock::now();
             gen_time = t2 - t1;
@@ -141,10 +143,11 @@ namespace evo_alg {
             mean_fit.push_back(population.getMeanFitness());
             diversity.push_back(population.getPairwiseDiversity());
 
-            if (!std::isnan(convergence_threshold) && utils::numericGreater(best_individual.getFitnessValue()[0], convergence_threshold))
+            if (!std::isnan(convergence_threshold) &&
+                utils::numericGreater(best_individual.getFitnessValue()[0], convergence_threshold))
                 break;
 
-            if (convergence_level >= convergence_interval)
+            if (convergence_interval && convergence_level >= convergence_interval)
                 break;
         }
 
