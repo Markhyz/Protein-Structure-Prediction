@@ -39,6 +39,8 @@ namespace evo_alg {
         template <size_t ChromosomeIndex = 0, typename... Args>
         void setChromosome(Args&&... args);
 
+        void setFitnessValue(typename FitnessFunction<GeneTypes...>::fitness_t const fitness_value);
+
         bool operator<(Individual<GeneTypes...> const& ind) const;
         bool operator>(Individual<GeneTypes...> const& ind) const;
 
@@ -94,6 +96,12 @@ namespace evo_alg {
     template <size_t ChromosomeIndex, typename... Args>
     void Individual<GeneTypes...>::setChromosome(Args&&... args) {
         genotype_.template setChromosome<ChromosomeIndex>(std::forward<Args>(args)...);
+    }
+
+    template <typename... GeneTypes>
+    void
+    Individual<GeneTypes...>::setFitnessValue(typename FitnessFunction<GeneTypes...>::fitness_t const fitness_value) {
+        phenotype_.setFitnessValue(fitness_value);
     }
 
     template <typename... GeneTypes>

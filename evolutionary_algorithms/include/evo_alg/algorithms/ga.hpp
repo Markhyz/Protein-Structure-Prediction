@@ -62,7 +62,7 @@ namespace evo_alg {
             std::iota(ind_indexes.begin(), ind_indexes.end(), 0);
             std::shuffle(ind_indexes.begin(), ind_indexes.end(), utils::rng);
 
-            size_t generation_size = (size_t) pop_size * generation_gap;
+            size_t generation_size = (size_t)((double) pop_size * generation_gap);
 
             t1 = std::chrono::high_resolution_clock::now();
 

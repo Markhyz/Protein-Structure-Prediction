@@ -13,6 +13,8 @@ namespace evo_alg {
         std::vector<double> linearScale(std::vector<double> const& fitness_values, double const c);
         std::vector<double> linearNormalization(std::vector<double> const& fitness_values, double const min_value,
                                                 double const max_value);
+
+        using fitness_t = std::vector<double>;
     }
 
     template <typename... GeneTypes>
@@ -20,7 +22,7 @@ namespace evo_alg {
       public:
         POINTER_ALIAS(FitnessFunction<GeneTypes...>)
 
-        using fitness_t = std::vector<double>;
+        using fitness_t = fitness::fitness_t;
 
         using gene_bounds_t = std::variant<std::pair<GeneTypes, GeneTypes>...>;
         using chromosome_bounds_t = std::vector<gene_bounds_t>;

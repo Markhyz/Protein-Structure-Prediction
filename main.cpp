@@ -9,6 +9,8 @@
 #include <iostream>
 #include <memory>
 
+#include <mpi.h>
+
 using namespace std;
 
 namespace angle_type {
@@ -226,10 +228,10 @@ class RosettaCentroidEnergyFunction : public evo_alg::FitnessFunction<double> {
         ss_score = ss_score / ss_total;
 
         double rosetta_score = energy_score_->score(protein_structure_);
-        max_energy = max(max_energy, rosetta_score);
+        // max_energy = max(max_energy, rosetta_score);
         rosetta_score = 1 - rosetta_score / max_energy;
 
-        double result = (rosetta_score + pow(ss_score, 3)) / 2;
+        double result = (rosetta_score + pow(ss_score, 2)) / 2;
 
         return {result};
     }
@@ -250,6 +252,29 @@ class RosettaCentroidEnergyFunction : public evo_alg::FitnessFunction<double> {
 
 size_t tournamentSelection(std::vector<double> const& individuals_fit) {
     return evo_alg::selector::tournament(individuals_fit, 2);
+}
+
+pair<evo_alg::real_individual_t, evo_alg::real_individual_t>
+residueOnePointCrossover(evo_alg::real_individual_t const& parent_1, evo_alg::real_individual_t const& parent_2) {
+    evo_alg::real_individual_t child_1(parent_1), child_2(parent_2);
+
+    evo_alg::real_chromosome_t parent_1_chromosome = parent_1.getChromosome();
+    evo_alg::real_chromosome_t parent_2_chromosome = parent_2.getChromosome();
+    evo_alg::real_chromosome_t child_1_chromosome = child_1.getChromosome();
+    evo_alg::real_chromosome_t child_2_chromosome = child_2.getChromosome();
+
+    size_t const chromosome_size = parent_1.getChromosome().size();
+    size_t const residue_num = residue_indexes.size();
+    std::uniform_int_distribution<size_t> point_dist(1, residue_num - 1);
+    size_t const cut_point = residue_indexes[point_dist(evo_alg::utils::rng)];
+    for (size_t index = cut_point; index < chromosome_size; ++index) {
+        child_1_chromosome[index] = parent_2_chromosome[index];
+        child_2_chromosome[index] = parent_1_chromosome[index];
+    }
+    child_1.setChromosome(child_1_chromosome);
+    child_2.setChromosome(child_2_chromosome);
+
+    return {child_1, child_2};
 }
 
 evo_alg::real_individual_t fragPolynomialMutation(evo_alg::real_individual_t const& individual, double const pr) {
@@ -396,7 +421,40 @@ void repackProtein(core::pose::Pose& pose, core::scoring::ScoreFunctionOP& score
     core::pack::pack_rotamers(pose, *scorefnx, task);
 }
 
+void evaluateFitness(evo_alg::FitnessFunction<double>::shared_ptr fit) {
+    size_t chromosome_size = fit->getBounds().size();
+    double* chromosome = (double*)malloc(chromosome_size * sizeof(double));
+    while (true) {
+        int size;
+        MPI_Recv(&size, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        if (size != 0) {
+            vector<vector<double>> chromosomes(size);
+            for (int i = 0; i < size; ++i) {
+                MPI_Recv(chromosome, (int)chromosome_size, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                chromosomes[i] = {chromosome, chromosome + chromosome_size};
+            }
+            vector<typename evo_alg::fitness::fitness_t> fitness_values(size);
+            for (int i = 0; i < size; ++i) {
+                fitness_values[i] = (*fit)({chromosomes[i]});
+            }
+            for (int i = 0; i < size; ++i) {
+                MPI_Send(fitness_values[i].data(), (int)fit->getDimension(), MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+            }
+        } else
+            break;
+    }
+}
+
 int main(int argc, char** argv) {
+
+    int rank, size;
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    evo_alg::utils::initMPI(size, rank);
+
     char* argv2[] = {argv[0]};
     core::init::init(1, argv2);
     string protein_name = argv[1];
@@ -410,12 +468,6 @@ int main(int argc, char** argv) {
     getSS(protein_name);
     getFragments3(protein_name);
     getFragments9(protein_name);
-
-    cout << endl << "Protein: " << endl;
-    cout << protein_desc << endl;
-    cout << sequence << endl << endl;
-
-    cout << "Sec. Struct: " << ss << endl << endl;
 
     core::pose::Pose pose, faPose;
 
@@ -456,6 +508,13 @@ int main(int argc, char** argv) {
     core::scoring::ScoreFunctionOP energy_score_fa =
         core::scoring::ScoreFunctionFactory::create_score_function("ref2015");
 
+    if (rank != 0) {
+        evaluateFitness(dynamic_pointer_cast<RosettaCentroidEnergyFunction>(fit_centroid));
+
+        MPI_Finalize();
+        return 0;
+    }
+
     core::pose::Pose native_structure;
     core::import_pose::pose_from_file(native_structure, "proteins/" + protein_name + "/pdb", false,
                                       core::import_pose::PDB_file);
@@ -464,6 +523,12 @@ int main(int argc, char** argv) {
     core::import_pose::pose_from_file(native_structure2, "proteins/" + protein_name + "/pdb", false,
                                       core::import_pose::PDB_file);
     core::util::switch_to_residue_type_set(native_structure2, core::chemical::CENTROID);
+
+    cout << endl << "Protein: " << endl;
+    cout << protein_desc << endl;
+    cout << sequence << endl << endl;
+
+    cout << "Sec. Struct: " << ss << endl << endl;
 
     size_t iteration_num = 1000;
     size_t it_explore = iteration_num * 0.7, it_exploit = (iteration_num - it_explore) * 1,
@@ -478,8 +543,8 @@ int main(int argc, char** argv) {
     vector<double> best_fit, mean_fit, diversity;
     tie(best_ind, pop, best_fit, mean_fit, diversity) =
         evo_alg::ga<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(
-            it_explore, pop_size, 0, fit_centroid, proteinInit, evo_alg::selector::roulette,
-            evo_alg::recombinator::onePoint<double>, cross_prob, frag9Mutation, mut_prob, gen_gap, pop, 1, NAN, 0);
+            it_explore, pop_size, 0, fit_centroid, proteinInit, evo_alg::selector::roulette, residueOnePointCrossover,
+            cross_prob, frag9Mutation, mut_prob, gen_gap, pop, 1, NAN, 0);
 
     const std::vector<size_t> sorted_individuals = pop.getSortedIndividuals();
     pop[sorted_individuals[pop_size - 1]] = best_ind;
@@ -487,8 +552,8 @@ int main(int argc, char** argv) {
     vector<double> best_fit_2, mean_fit_2, diversity_2;
     tie(best_ind, pop, best_fit_2, mean_fit_2, diversity_2) =
         evo_alg::ga<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(
-            it_exploit, pop_size, 1, fit_centroid, proteinInit, tournamentSelection,
-            evo_alg::recombinator::onePoint<double>, cross_prob, frag3Mutation, mut_prob / 3, 1, pop, 1, NAN, 0);
+            it_exploit, pop_size, 1, fit_centroid, proteinInit, tournamentSelection, residueOnePointCrossover,
+            cross_prob, frag3Mutation, mut_prob / 3, 1, pop, 1, NAN, 0);
 
     for (size_t index = 0; index < best_fit_2.size(); ++index) {
         best_fit.push_back(best_fit_2[index]);
@@ -621,6 +686,13 @@ int main(int argc, char** argv) {
     for (size_t index = 0; index < diversity.size(); ++index) {
         diver_out << index << " " << diversity[index] << endl;
     }
+
+    for (int node_index = 1; node_index < size; ++node_index) {
+        int msg = 0;
+        MPI_Send(&msg, 1, MPI_INT, node_index, 0, MPI_COMM_WORLD);
+    }
+
+    MPI_Finalize();
 
     return 0;
 }

@@ -10,7 +10,11 @@ namespace evo_alg {
 
         extern std::mt19937_64 rng;
 
+        extern int mpi_size, mpi_rank;
+
         double uniformProbGen();
+
+        void initMPI(int const size, int const rank);
 
         template <typename T>
         bool numericLower(T const x, T const y, double const precision = eps) {

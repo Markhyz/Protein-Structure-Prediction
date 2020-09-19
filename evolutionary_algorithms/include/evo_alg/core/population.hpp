@@ -7,6 +7,10 @@
 
 #include <omp.h>
 
+#ifdef EVO_ALG_MPI
+#include "mpi.h"
+#endif
+
 #include <algorithm>
 #include <iostream>
 
@@ -111,13 +115,6 @@ namespace evo_alg {
     }
 
     template <class IndividualType>
-    void Population<IndividualType>::evaluateFitness() {
-        // #pragma omp parallel for schedule(dynamic)
-        for (size_t index = 0; index < population_.size(); ++index)
-            population_[index].evaluateFitness();
-    }
-
-    template <class IndividualType>
     void Population<IndividualType>::appendIndividual(IndividualType const& individual) {
         population_.push_back(individual);
     }
@@ -177,6 +174,69 @@ namespace evo_alg {
 
         return diversity;
     }
+
+#ifdef EVO_ALG_MPI
+    template <class IndividualType>
+    void Population<IndividualType>::evaluateFitness() {
+        using gene_type_t = typename std::tuple_element<0, typename IndividualType::gene_types>::type;
+
+        size_t const work_size = (size_t) utils::mpi_size;
+        bool constexpr valid_type = std::is_same_v<gene_type_t, int> || std::is_same_v<gene_type_t, bool> ||
+                                    std::is_same_v<gene_type_t, char> || std::is_same_v<gene_type_t, double>;
+        if (work_size > 0 && valid_type) {
+            size_t const fitness_dimension = population_[0].getFitnessFunction()->getDimension();
+            double* fitness_value = (double*) malloc(fitness_dimension * sizeof(double));
+            size_t const work_slice = (size_t) ceil((double) population_.size() / (double) work_size);
+            for (size_t node_index = 1; node_index < work_size; ++node_index) {
+                size_t const offset = work_slice * node_index;
+                size_t const slice_size = std::min(work_slice, population_.size() - offset);
+                MPI_Send(&slice_size, 1, MPI_INT, (int) node_index, 0, MPI_COMM_WORLD);
+
+                for (size_t ind_index = offset; ind_index < offset + slice_size; ++ind_index) {
+                    std::vector<gene_type_t> chromosome = population_[ind_index].getChromosome();
+                    if constexpr (std::is_same_v<gene_type_t, int>) {
+                        MPI_Send(chromosome.data(), (int) chromosome.size(), MPI_INT, (int) node_index, 0,
+                                 MPI_COMM_WORLD);
+                    } else if constexpr (std::is_same_v<gene_type_t, bool>) {
+                        std::vector<char> bool_to_char(chromosome.begin(), chromosome.end());
+                        MPI_Send(bool_to_char.data(), (int) bool_to_char.size(), MPI_BYTE, (int) node_index, 0,
+                                 MPI_COMM_WORLD);
+                    } else if constexpr (std::is_same_v<gene_type_t, char>) {
+                        MPI_Send(chromosome.data(), (int) chromosome.size(), MPI_BYTE, (int) node_index, 0,
+                                 MPI_COMM_WORLD);
+                    } else if constexpr (std::is_same_v<gene_type_t, double>) {
+                        MPI_Send(chromosome.data(), (int) chromosome.size(), MPI_DOUBLE, (int) node_index, 0,
+                                 MPI_COMM_WORLD);
+                    }
+                }
+            }
+            for (size_t ind_index = 0; ind_index < work_slice; ++ind_index)
+                population_[ind_index].evaluateFitness();
+
+            for (size_t node_index = 1; node_index < work_size; ++node_index) {
+                size_t const offset = work_slice * node_index;
+                size_t slice_size = std::min(work_slice, population_.size() - offset);
+
+                for (size_t ind_index = offset; ind_index < offset + slice_size; ++ind_index) {
+                    MPI_Recv(fitness_value, (int) fitness_dimension, MPI_DOUBLE, (int) node_index, 0, MPI_COMM_WORLD,
+                             MPI_STATUS_IGNORE);
+                    population_[ind_index].setFitnessValue({fitness_value, fitness_value + fitness_dimension});
+                }
+            }
+        } else {
+            for (size_t index = 0; index < population_.size(); ++index) {
+                population_[index].evaluateFitness();
+            }
+        }
+    }
+#else
+    template <class IndividualType>
+    void Population<IndividualType>::evaluateFitness() {
+#pragma omp parallel for schedule(dynamic)
+        for (size_t index = 0; index < population_.size(); ++index)
+            population_[index].evaluateFitness();
+    }
+#endif
 }
 
 #endif

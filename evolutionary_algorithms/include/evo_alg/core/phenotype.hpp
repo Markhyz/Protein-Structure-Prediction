@@ -36,6 +36,8 @@ namespace evo_alg {
         template <size_t ChromosomeIndex = 0, typename... Args>
         void setBounds(Args&&... args);
 
+        void setFitnessValue(typename FitnessFunction<GeneTypes...>::fitness_t const fitness_value);
+
       private:
         typename FitnessFunction<GeneTypes...>::shared_ptr fitness_;
         std::optional<typename FitnessFunction<GeneTypes...>::fitness_t> fitness_value_;
@@ -79,6 +81,12 @@ namespace evo_alg {
     template <size_t ChromosomeIndex, typename... Args>
     void Phenotype<GeneTypes...>::setBounds(Args&&... args) {
         fitness_->template setBounds<ChromosomeIndex>(std::forward<Args>(args)...);
+    }
+
+    template <typename... GeneTypes>
+    void
+    Phenotype<GeneTypes...>::setFitnessValue(typename FitnessFunction<GeneTypes...>::fitness_t const fitness_value) {
+        fitness_value_ = fitness_value;
     }
 }
 
