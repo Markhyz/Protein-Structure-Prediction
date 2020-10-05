@@ -21,9 +21,9 @@ namespace evo_alg {
        typename selector::selection_function_t<IndividualType> const selection_fun,
        typename recombinator::crossover_function_t<IndividualType> const crossover_fun, double const crossover_pr,
        typename mutator::mutation_function_t<IndividualType> const mutation_fun, double const mutation_pr,
-       double const generation_gap = 1.0, Population<IndividualType> const initial_pop = {}, size_t const log_step = 0,
-       double const convergence_threshold = NAN, size_t const convergence_interval = 100,
-       double const convergence_eps = utils::eps) {
+       Population<IndividualType> const initial_pop = {}, double generation_gap = 1.0, double const gap_inc = 0,
+       double c = 0, double const c_inc = 0, size_t const log_step = 0, double const convergence_threshold = NAN,
+       size_t const convergence_interval = 100, double const convergence_eps = utils::eps) {
         std::vector<double> best_fit, mean_fit, diversity;
 
         std::chrono::duration<double, std::milli> it_time, gen_time, eval_time;
@@ -44,7 +44,6 @@ namespace evo_alg {
 
         IndividualType best_individual = population[population.getBestIndividuals()[0]];
         size_t convergence_level = 0;
-        double c = 1.2, c_inc = 0.8 / (double) iterations;
         for (size_t it = 0; it < iterations; ++it) {
             tt1 = std::chrono::high_resolution_clock::now();
 
@@ -52,10 +51,12 @@ namespace evo_alg {
             for (size_t index = 0; index < pop_size; ++index)
                 pop_fitness[index] = population.getIndividual(index).getFitnessValue()[0];
 
-            // pop_fitness =
-            //     fitness::linearNormalization(pop_fitness, *std::min_element(pop_fitness.begin(), pop_fitness.end()),
-            //                                  *std::max_element(pop_fitness.begin(), pop_fitness.end()));
-            // pop_fitness = fitness::linearScale(pop_fitness, c);
+            if (c > 1) {
+                pop_fitness =
+                    fitness::linearNormalization(pop_fitness, *std::min_element(pop_fitness.begin(), pop_fitness.end()),
+                                                 *std::max_element(pop_fitness.begin(), pop_fitness.end()));
+                pop_fitness = fitness::linearScale(pop_fitness, c);
+            }
 
             Population<IndividualType> new_population(population);
             std::vector<size_t> ind_indexes(pop_size);
@@ -127,21 +128,24 @@ namespace evo_alg {
             if (current_best_individual > best_individual)
                 best_individual = current_best_individual;
 
+            best_fit.push_back(population.getBestFitness());
+            mean_fit.push_back(population.getMeanFitness());
+
+            double const diver = population.getPairwiseDiversity();
+            diversity.push_back(diver);
+
             tt2 = std::chrono::high_resolution_clock::now();
             it_time = tt2 - tt1;
 
-            c = c + c_inc;
+            c += c_inc;
+            generation_gap = std::min(1.0, generation_gap + gap_inc);
 
             if (log_step > 0 && it % log_step == 0) {
-                printf("Iteration %lu -> cur. fitness: %.9f | best fitness: %.9f | c: %.5f", it,
-                       current_best_individual.getFitnessValue()[0], best_individual.getFitnessValue()[0], c);
+                printf("Iteration %lu -> cur. fitness: %.7f | best fitness: %.7f | diversity: %.7f", it,
+                       current_best_individual.getFitnessValue()[0], best_individual.getFitnessValue()[0], diver);
                 printf(" || times -> total: %.0fms | gen: %.0fms | eval: %.0fms\n", it_time.count(), gen_time.count(),
                        eval_time.count());
             }
-
-            best_fit.push_back(population.getBestFitness());
-            mean_fit.push_back(population.getMeanFitness());
-            diversity.push_back(population.getPairwiseDiversity());
 
             if (!std::isnan(convergence_threshold) &&
                 utils::numericGreater(best_individual.getFitnessValue()[0], convergence_threshold))
