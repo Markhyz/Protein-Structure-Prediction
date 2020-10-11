@@ -1,4 +1,4 @@
-#include <evo_alg/algorithms/ga.hpp>
+#include <evo_alg/algorithms/brkga.hpp>
 #include <evo_alg/core.hpp>
 #include <evo_alg/operators.hpp>
 
@@ -10,7 +10,7 @@ using namespace std;
 
 class AckleyFunction : public evo_alg::FitnessFunction<double> {
   public:
-    AckleyFunction(size_t n) : FitnessFunction<double>{{n, {-5, 10}}} {};
+    AckleyFunction(size_t n) : FitnessFunction<double>{{n, {0, 1}}}, bounds_{n, {-5, 10}} {};
 
     size_t getDimension() const override {
         return dimension_;
@@ -20,8 +20,26 @@ class AckleyFunction : public evo_alg::FitnessFunction<double> {
         return new AckleyFunction(*this);
     }
 
+    vector<double> decode(vector<double> values) {
+        vector<double> decoded_values(values.size());
+        for (size_t index = 0; index < values.size(); ++index) {
+            decoded_values[index] =
+                bounds_[index].first + values[index] * (bounds_[index].second - bounds_[index].first);
+        }
+        return decoded_values;
+    }
+
+    vector<double> encode(vector<double> values) {
+        vector<double> encoded_values(values.size());
+        for (size_t index = 0; index < values.size(); ++index) {
+            encoded_values[index] =
+                (values[index] - bounds_[index].first) / (bounds_[index].second - bounds_[index].first);
+        }
+        return encoded_values;
+    }
+
     fitness_t operator()(evo_alg::Genotype<double> const& genotype) override {
-        vector<double> chromosome = genotype.getChromosome();
+        vector<double> chromosome = decode(genotype.getChromosome());
         double n = (double) chromosome.size();
         double const pi = acos(-1);
         double x = 0, y = 0;
@@ -36,35 +54,22 @@ class AckleyFunction : public evo_alg::FitnessFunction<double> {
 
   private:
     size_t dimension_ = 1;
+    vector<pair<double, double>> bounds_;
 };
-
-evo_alg::real_individual_t polynomialMutation(evo_alg::real_individual_t const& individual, double const pr) {
-    return evo_alg::mutator::polynomial(individual, pr, 60);
-}
-
-pair<evo_alg::real_individual_t, evo_alg::real_individual_t> sbxCrossover(evo_alg::real_individual_t const& parent_1,
-                                                                          evo_alg::real_individual_t const& parent_2) {
-    return evo_alg::recombinator::sbx(parent_1, parent_2, 1, 0.5);
-}
-
-size_t tournamentSelection(std::vector<double> const& individuals_fit) {
-    return evo_alg::selector::tournament(individuals_fit, 2);
-}
 
 int main(int argc, char** argv) {
     size_t n = argc > 1 ? stoul(argv[1]) : 30;
 
-    evo_alg::FitnessFunction<double>::const_shared_ptr fit(new AckleyFunction(n));
+    evo_alg::FitnessFunction<double>::unique_ptr fit(new AckleyFunction(n));
 
     evo_alg::Population<evo_alg::Individual<double>> pop;
     evo_alg::Individual<double> best_ind;
     vector<double> best_fit, mean_fit, diversity;
     tie(best_ind, pop, best_fit, mean_fit, diversity) =
-        evo_alg::ga<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(
-            2000, 100, 1, fit, evo_alg::initializator::uniformRandomInit<double>, tournamentSelection, sbxCrossover,
-            0.95, polynomialMutation, 1 / (double) n, {}, 1, 0, 0, 0, 1);
+        evo_alg::brkga<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(
+            2000, 100, 0.05, 0.3, 0.7, fit, evo_alg::initializator::uniformRandomInit<double>, {}, 1, NAN, 0);
 
-    evo_alg::Individual<double> true_ind(fit, vector<double>(n, 0));
+    evo_alg::Individual<double> true_ind(fit, dynamic_pointer_cast<AckleyFunction>(fit)->encode(vector<double>(n, 0)));
     true_ind.evaluateFitness();
 
     cout << fixed;

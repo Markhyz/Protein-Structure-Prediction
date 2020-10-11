@@ -12,6 +12,7 @@
 #include <core/scoring/ScoreType.hh>
 #include <core/scoring/dssp/Dssp.hh>
 #include <core/scoring/rms_util.hh>
+#include <core/scoring/sasa/SasaCalc.hh>
 #include <core/util/SwitchResidueTypeSet.hh>
 #include <protocols/relax/ClassicRelax.hh>
 #include <protocols/relax/FastRelax.hh>

@@ -8,12 +8,11 @@ namespace evo_alg {
     namespace initializator {
         template <class IndividualType, class FitnessType>
         using initialization_function_t =
-            std::function<Population<IndividualType>(typename FitnessType::const_shared_ptr, size_t const)>;
+            std::function<void(Population<IndividualType>&, typename FitnessType::const_shared_ptr, size_t const)>;
 
         template <typename GeneType>
-        Population<Individual<GeneType>> uniformRandomInit(typename FitnessFunction<GeneType>::const_shared_ptr fitness,
-                                                           size_t const size) {
-            Population<Individual<GeneType>> population(size);
+        void uniformRandomInit(Population<Individual<GeneType>>& population,
+                               typename FitnessFunction<GeneType>::const_shared_ptr fitness, size_t const size) {
             std::vector<std::pair<GeneType, GeneType>> const bounds = fitness->getBounds();
             size_t const chromosome_size = bounds.size();
             for (size_t index = 0; index < size; ++index) {
@@ -32,10 +31,8 @@ namespace evo_alg {
                     }
                 }
 
-                population[index] = {fitness, new_chromosome};
+                population[index].setChromosome(new_chromosome);
             }
-
-            return population;
         }
     }
 }

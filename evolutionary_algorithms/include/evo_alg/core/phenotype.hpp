@@ -22,6 +22,7 @@ namespace evo_alg {
 
         Phenotype();
         Phenotype(typename FitnessFunction<GeneTypes...>::const_shared_ptr const& fitness);
+        Phenotype(Phenotype<GeneTypes...> const& phenotype);
 
         void evaluateFitness(Genotype<GeneTypes...> const& genotype);
 
@@ -38,6 +39,8 @@ namespace evo_alg {
 
         void setFitnessValue(typename FitnessFunction<GeneTypes...>::fitness_t const fitness_value);
 
+        Phenotype<GeneTypes...>& operator=(Phenotype<GeneTypes...> const& phenotype);
+
       private:
         typename FitnessFunction<GeneTypes...>::shared_ptr fitness_;
         std::optional<typename FitnessFunction<GeneTypes...>::fitness_t> fitness_value_;
@@ -49,6 +52,10 @@ namespace evo_alg {
     template <typename... GeneTypes>
     Phenotype<GeneTypes...>::Phenotype(typename FitnessFunction<GeneTypes...>::const_shared_ptr const& fitness)
         : fitness_(fitness->clone()){};
+
+    template <typename... GeneTypes>
+    Phenotype<GeneTypes...>::Phenotype(Phenotype<GeneTypes...> const& phenotype)
+        : fitness_(phenotype.fitness_->clone()), fitness_value_(phenotype.fitness_value_){};
 
     template <typename... GeneTypes>
     void Phenotype<GeneTypes...>::evaluateFitness(Genotype<GeneTypes...> const& genotype) {
@@ -87,6 +94,14 @@ namespace evo_alg {
     void
     Phenotype<GeneTypes...>::setFitnessValue(typename FitnessFunction<GeneTypes...>::fitness_t const fitness_value) {
         fitness_value_ = fitness_value;
+    }
+
+    template <typename... GeneTypes>
+    Phenotype<GeneTypes...>& Phenotype<GeneTypes...>::operator=(Phenotype<GeneTypes...> const& phenotype) {
+        fitness_ = typename FitnessFunction<GeneTypes...>::shared_ptr(phenotype.fitness_->clone());
+        fitness_value_ = phenotype.fitness_value_;
+
+        return *this;
     }
 }
 

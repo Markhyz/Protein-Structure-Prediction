@@ -23,20 +23,28 @@ namespace evo_alg {
        typename mutator::mutation_function_t<IndividualType> const mutation_fun, double const mutation_pr,
        Population<IndividualType> const initial_pop = {}, double generation_gap = 1.0, double const gap_inc = 0,
        double c = 0, double const c_inc = 0, size_t const log_step = 0, double const convergence_threshold = NAN,
-       size_t const convergence_interval = 100, double const convergence_eps = utils::eps) {
+       size_t const convergence_interval = 0, double const convergence_eps = utils::eps) {
         std::vector<double> best_fit, mean_fit, diversity;
 
         std::chrono::duration<double, std::milli> it_time, gen_time, eval_time;
         std::chrono::time_point<std::chrono::high_resolution_clock> t1, t2, tt1, tt2;
 
-        Population<IndividualType> population;
-        if (pop_size - initial_pop.getSize() > 0) {
-            population = init_fun(fitness, pop_size - initial_pop.getSize());
+        Population<IndividualType> population(pop_size), new_population(pop_size);
+#pragma omp parallel for schedule(dynamic)
+        for (size_t index = 0; index < pop_size; ++index) {
+            population[index] = {fitness};
+            new_population[index] = {fitness};
         }
-        for (size_t index = 0; index < initial_pop.getSize(); ++index)
-            population.appendIndividual({fitness, initial_pop[index].getChromosome()});
+        if (pop_size - initial_pop.getSize() > 0) {
+            init_fun(population, fitness, pop_size - initial_pop.getSize());
+        }
+        for (size_t index = 0; index < initial_pop.getSize(); ++index) {
+            population[pop_size - initial_pop.getSize() + index].setChromosome(initial_pop[index].getChromosome());
+        }
 
         population.evaluateFitness();
+
+        IndividualType child_1(population[0]), child_2(population[0]);
 
         best_fit.push_back(population.getBestFitness());
         mean_fit.push_back(population.getMeanFitness());
@@ -58,7 +66,10 @@ namespace evo_alg {
                 pop_fitness = fitness::linearScale(pop_fitness, c);
             }
 
-            Population<IndividualType> new_population(population);
+            for (size_t index = 0; index < pop_size; ++index) {
+                new_population[index].setChromosome(population[index].getChromosome());
+            }
+
             std::vector<size_t> ind_indexes(pop_size);
             std::iota(ind_indexes.begin(), ind_indexes.end(), 0);
             std::shuffle(ind_indexes.begin(), ind_indexes.end(), utils::rng);
@@ -67,7 +78,6 @@ namespace evo_alg {
 
             t1 = std::chrono::high_resolution_clock::now();
 
-#pragma omp parallel for schedule(dynamic)
             for (size_t index = 0; index < generation_size; index += 2) {
                 size_t const parent_1 = selection_fun(pop_fitness);
 
@@ -82,22 +92,20 @@ namespace evo_alg {
                 size_t const parent_2 = pop_indexes[selection_fun(pop_fitness_2)];
 
                 double const pr = utils::uniformProbGen();
-                IndividualType child_1;
-                IndividualType child_2;
                 if (pr < crossover_pr) {
-                    std::tie(child_1, child_2) =
-                        crossover_fun(population.getIndividual(parent_1), population.getIndividual(parent_2));
+                    crossover_fun(population.getIndividual(parent_1), population.getIndividual(parent_2), child_1,
+                                  child_2);
                 } else {
-                    child_1 = population.getIndividual(parent_1);
-                    child_2 = population.getIndividual(parent_2);
+                    child_1.setChromosome(population.getIndividual(parent_1).getChromosome());
+                    child_2.setChromosome(population.getIndividual(parent_2).getChromosome());
                 }
 
-                child_1 = mutation_fun(child_1, mutation_pr);
-                child_2 = mutation_fun(child_2, mutation_pr);
+                mutation_fun(child_1, mutation_pr);
+                mutation_fun(child_2, mutation_pr);
 
-                new_population[ind_indexes[index]] = child_1;
+                new_population[ind_indexes[index]].setChromosome(child_1.getChromosome());
                 if (index + 1 < generation_size)
-                    new_population[ind_indexes[index + 1]] = child_2;
+                    new_population[ind_indexes[index + 1]].setChromosome(child_2.getChromosome());
             }
             t2 = std::chrono::high_resolution_clock::now();
             gen_time = t2 - t1;
@@ -110,23 +118,31 @@ namespace evo_alg {
             if (elite_size > 0) {
                 const std::vector<size_t> sorted_individuals = population.getSortedIndividuals();
                 const std::vector<size_t> new_sorted_individuals = new_population.getSortedIndividuals();
-                for (size_t index = 0; index < elite_size; ++index)
-                    new_population[new_sorted_individuals[pop_size - index - 1]] =
-                        population[sorted_individuals[index]];
+                for (size_t index = 0; index < elite_size; ++index) {
+                    new_population[new_sorted_individuals[pop_size - index - 1]].setChromosome(
+                        population[sorted_individuals[index]].getChromosome());
+                    new_population[new_sorted_individuals[pop_size - index - 1]].setFitnessValue(
+                        population[sorted_individuals[index]].getFitnessValue());
+                }
             }
 
-            population = std::move(new_population);
+            for (size_t index = 0; index < pop_size; ++index) {
+                population[index].setChromosome(new_population[index].getChromosome());
+                population[index].setFitnessValue(new_population[index].getFitnessValue());
+            }
 
-            IndividualType current_best_individual = population[population.getBestIndividuals()[0]];
-            if (utils::numericEqual(current_best_individual.getFitnessValue()[0], best_individual.getFitnessValue()[0],
-                                    convergence_eps)) {
+            size_t const current_best_individual = population.getBestIndividuals()[0];
+            if (utils::numericEqual(population[current_best_individual].getFitnessValue()[0],
+                                    best_individual.getFitnessValue()[0], convergence_eps)) {
                 ++convergence_level;
             } else {
                 convergence_level = 0;
             }
 
-            if (current_best_individual > best_individual)
-                best_individual = current_best_individual;
+            if (population[current_best_individual] > best_individual) {
+                best_individual.setChromosome(population[current_best_individual].getChromosome());
+                best_individual.setFitnessValue(population[current_best_individual].getFitnessValue());
+            }
 
             best_fit.push_back(population.getBestFitness());
             mean_fit.push_back(population.getMeanFitness());
@@ -142,8 +158,9 @@ namespace evo_alg {
 
             if (log_step > 0 && it % log_step == 0) {
                 printf("Iteration %lu -> cur. fitness: %.7f | best fitness: %.7f | diversity: %.7f", it,
-                       current_best_individual.getFitnessValue()[0], best_individual.getFitnessValue()[0], diver);
-                printf(" || times -> total: %.0fms | gen: %.0fms | eval: %.0fms\n", it_time.count(), gen_time.count(),
+                       population[current_best_individual].getFitnessValue()[0], best_individual.getFitnessValue()[0],
+                       diver);
+                printf(" || total: %.0fms | gen: %.0fms | eval: %.0fms\n", it_time.count(), gen_time.count(),
                        eval_time.count());
             }
 

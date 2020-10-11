@@ -36,7 +36,8 @@ namespace evo_alg {
     };
 
     template <typename... GeneTypes>
-    Genotype<GeneTypes...>::Genotype(){};
+    Genotype<GeneTypes...>::Genotype()
+        : chromosomes_{sizeof...(GeneTypes), typename Genotype<GeneTypes...>::chromosome_t()} {};
 
     template <typename... GeneTypes>
     Genotype<GeneTypes...>::Genotype(std::vector<GeneTypes> const&... chromosomes)

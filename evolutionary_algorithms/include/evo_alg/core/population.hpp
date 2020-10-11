@@ -38,8 +38,8 @@ namespace evo_alg {
         void resize(size_t const new_size);
 
         double getBestFitness() const;
-        double getMeanFitness() const;
-        double getPairwiseDiversity() const;
+        double getMeanFitness(size_t const start = 0, size_t end = 0) const;
+        double getPairwiseDiversity(size_t const start = 0, size_t end = 0) const;
 
         IndividualType& operator[](size_t const index);
         IndividualType const& operator[](size_t const index) const;
@@ -134,33 +134,38 @@ namespace evo_alg {
     }
 
     template <class IndividualType>
-    double Population<IndividualType>::getMeanFitness() const {
+    double Population<IndividualType>::getMeanFitness(size_t const start, size_t end) const {
+        if (end == 0)
+            end = population_.size();
         double total_fit = 0;
-        for (size_t index = 0; index < this->population_.size(); ++index)
+        for (size_t index = start; index < end; ++index)
             total_fit += this->population_[index].getFitnessValue()[0];
 
-        return total_fit / (double) this->population_.size();
+        return total_fit / (double) (end - start);
     }
 
     template <class IndividualType>
-    double Population<IndividualType>::getPairwiseDiversity() const {
+    double Population<IndividualType>::getPairwiseDiversity(size_t const start, size_t end) const {
         using gene_type_t = typename std::tuple_element<0, typename IndividualType::gene_types>::type;
+
+        if (end == 0)
+            end = population_.size();
 
         double diversity = 0;
 
-        std::vector<std::pair<gene_type_t, gene_type_t>> bounds = this->population_[0].getBounds();
+        std::vector<std::pair<gene_type_t, gene_type_t>> bounds = population_[0].getBounds();
         double normalization_factor = 0;
         for (size_t index = 0; index < bounds.size(); ++index)
             normalization_factor += pow(bounds[index].second - bounds[index].first, 2);
         normalization_factor = sqrt(normalization_factor);
 
-        std::vector<double> ind_dist(this->population_.size());
+        std::vector<double> ind_dist(population_.size());
 
 #pragma omp parallel for schedule(dynamic)
-        for (size_t index = 0; index < this->population_.size(); ++index) {
-            for (size_t index2 = index + 1; index2 < this->population_.size(); ++index2) {
-                std::vector<gene_type_t> chromosome_1 = this->population_[index].getChromosome();
-                std::vector<gene_type_t> chromosome_2 = this->population_[index2].getChromosome();
+        for (size_t index = start; index < end; ++index) {
+            for (size_t index2 = index + 1; index2 < end; ++index2) {
+                std::vector<gene_type_t> chromosome_1 = population_[index].getChromosome();
+                std::vector<gene_type_t> chromosome_2 = population_[index2].getChromosome();
                 double pair_distance = 0;
                 for (size_t gene_index = 0; gene_index < bounds.size(); ++gene_index) {
                     pair_distance += pow(chromosome_1[gene_index] - chromosome_2[gene_index], 2);
@@ -169,7 +174,7 @@ namespace evo_alg {
             }
         }
         diversity += std::accumulate(ind_dist.begin(), ind_dist.end(), 0.0);
-        diversity = (2 * diversity) / (double) (this->population_.size() * (this->population_.size() - 1));
+        diversity = (2 * diversity) / (double) ((end - start) * (end - start - 1));
         diversity /= normalization_factor;
 
         return diversity;

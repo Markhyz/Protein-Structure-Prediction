@@ -17,6 +17,7 @@ namespace evo_alg {
         using gene_types = std::tuple<GeneTypes...>;
 
         Individual();
+        Individual(typename FitnessFunction<GeneTypes...>::const_shared_ptr fitness);
         Individual(typename FitnessFunction<GeneTypes...>::const_shared_ptr fitness,
                    std::vector<GeneTypes> const&... chromosomes);
 
@@ -27,6 +28,9 @@ namespace evo_alg {
 
         typename FitnessFunction<GeneTypes...>::const_shared_ptr getFitnessFunction() const;
         typename FitnessFunction<GeneTypes...>::fitness_t const& getFitnessValue() const;
+
+        template <size_t ChromosomeIndex = 0>
+        double getEuclidianDistance(Individual<GeneTypes...> const& target_ind) const;
 
         template <size_t ChromosomeIndex = 0>
         std::vector<std::pair<types::NthType<ChromosomeIndex, GeneTypes...>,
@@ -53,6 +57,10 @@ namespace evo_alg {
     Individual<GeneTypes...>::Individual(){};
 
     template <typename... GeneTypes>
+    Individual<GeneTypes...>::Individual(typename FitnessFunction<GeneTypes...>::const_shared_ptr fitness)
+        : genotype_{}, phenotype_(fitness){};
+
+    template <typename... GeneTypes>
     Individual<GeneTypes...>::Individual(typename FitnessFunction<GeneTypes...>::const_shared_ptr fitness,
                                          std::vector<GeneTypes> const&... chromosomes)
         : genotype_(chromosomes...), phenotype_(fitness){};
@@ -76,6 +84,28 @@ namespace evo_alg {
     template <typename... GeneTypes>
     typename FitnessFunction<GeneTypes...>::fitness_t const& Individual<GeneTypes...>::getFitnessValue() const {
         return phenotype_.getFitnessValue();
+    }
+
+    template <typename... GeneTypes>
+    template <size_t ChromosomeIndex>
+    double Individual<GeneTypes...>::getEuclidianDistance(Individual<GeneTypes...> const& target_ind) const {
+        using gene_t = types::NthType<ChromosomeIndex, GeneTypes...>;
+
+        std::vector<std::pair<gene_t, gene_t>> bounds = phenotype_.template getBounds<ChromosomeIndex>();
+        double normalization_factor = 0;
+        for (size_t index = 0; index < bounds.size(); ++index)
+            normalization_factor += pow(bounds[index].second - bounds[index].first, 2);
+        normalization_factor = sqrt(normalization_factor);
+
+        std::vector<gene_t> chromosome = genotype_.template getChromosome<ChromosomeIndex>();
+        std::vector<gene_t> target_chromosome = target_ind.template getChromosome<ChromosomeIndex>();
+        double distance = 0;
+        for (size_t gene_index = 0; gene_index < bounds.size(); ++gene_index) {
+            distance += pow(chromosome[gene_index] - target_chromosome[gene_index], 2);
+        }
+        distance = sqrt(distance) / normalization_factor;
+
+        return distance;
     }
 
     template <typename... GeneTypes>

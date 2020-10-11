@@ -6,11 +6,9 @@
 
 namespace evo_alg {
     namespace mutator {
-        real_individual_t polynomial(real_individual_t const& individual, double const pr, uint32_t const n) {
-            real_individual_t mutated_individual(individual);
-
+        void polynomial(real_individual_t& individual, double const pr, uint32_t const n) {
             real_chromosome_t individual_chromosome = individual.getChromosome();
-            real_chromosome_t mutated_chromosome = mutated_individual.getChromosome();
+            real_chromosome_t mutated_chromosome = individual_chromosome;
             std::vector<std::pair<double, double>> bounds = individual.getBounds();
             for (size_t index = 0; index < mutated_chromosome.size(); ++index) {
                 double const cur_pr = utils::uniformProbGen();
@@ -25,9 +23,7 @@ namespace evo_alg {
                 assert(utils::numericGreaterEqual(mutated_chromosome[index], bounds[index].first));
                 assert(utils::numericLowerEqual(mutated_chromosome[index], bounds[index].second));
             }
-            mutated_individual.setChromosome(mutated_chromosome);
-
-            return mutated_individual;
+            individual.setChromosome(mutated_chromosome);
         }
     }
 }
