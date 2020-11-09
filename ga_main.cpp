@@ -26,7 +26,7 @@ class RosettaCentroidEnergyFunction : public evo_alg::FitnessFunction<double> {
         return create(protein_structure_.sequence());
     }
 
-    fitness_t operator()(evo_alg::Genotype<double> const& genotype) override {
+    evo_alg::fitness::FitnessValue operator()(evo_alg::Genotype<double> const& genotype) override {
         vector<double> chromosome = genotype.getChromosome();
         size_t angle_idx = 0;
         size_t residue_num = protein_structure_.total_residue();
@@ -56,10 +56,10 @@ class RosettaCentroidEnergyFunction : public evo_alg::FitnessFunction<double> {
 
     vector<double> getScores(core::pose::Pose& pose) {
         double ss_score, ss_total;
-        tie(ss_score, ss_total) = ssScore(protein_structure_);
+        tie(ss_score, ss_total) = ssScore(pose);
 
         double cm_score, cm_total;
-        tie(cm_score, cm_total) = cmScore(protein_structure_);
+        tie(cm_score, cm_total) = cmScore(pose);
 
         double rosetta_score = energy_score_->score(pose);
 
@@ -198,12 +198,6 @@ void proteinInit(evo_alg::Population<evo_alg::Individual<double>>& population,
 
     generateAngles(bounds2, 0, size * 0.5);
     generateAngles(bounds, size * 0.5, size);
-}
-
-void repackProtein(core::pose::Pose& pose, core::scoring::ScoreFunctionOP& scorefnx) {
-    core::pack::task::PackerTaskOP task = core::pack::task::TaskFactory::create_packer_task(pose);
-    task->restrict_to_repacking();
-    core::pack::pack_rotamers(pose, *scorefnx, task);
 }
 
 // argv -> 1: protein name | 2: start offset of pdb structure (default 1) | 3: rmsd file name

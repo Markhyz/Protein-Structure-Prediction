@@ -20,7 +20,7 @@ class SphereFunction : public evo_alg::FitnessFunction<double> {
         return new SphereFunction(*this);
     }
 
-    fitness_t operator()(evo_alg::Genotype<double> const& genotype) override {
+    FitnessValue operator()(evo_alg::Genotype<double> const& genotype) override {
         vector<double> chromosome = genotype.getChromosome();
         double result = 0.0;
         for (double value : chromosome)

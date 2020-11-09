@@ -30,7 +30,7 @@ class RosenbrockFunction : public evo_alg::FitnessFunction<double> {
         return result;
     }
 
-    fitness_t operator()(evo_alg::Genotype<double> const& genotype) override {
+    FitnessValue operator()(evo_alg::Genotype<double> const& genotype) override {
         vector<double> chromosome = genotype.getChromosome();
         double result = 0.0;
         for (size_t i = 0; i < chromosome.size() - 1; ++i)

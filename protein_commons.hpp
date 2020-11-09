@@ -134,17 +134,40 @@ void getContactMap(string protein_name) {
     vector<pair<double, int>> contact_prob;
 
     size_t idx = 0;
-    while (cm_in >> i >> j >> lb >> ub_ >> prob) {
+    while (cm_in >> i >> j >> prob) {
         res_pairs.push_back({i, j});
         contact_prob.push_back({prob, idx++});
     }
 
     sort(contact_prob.rbegin(), contact_prob.rend());
 
-    for (size_t index = 0; index < residue_indexes.size() / 2; ++index) {
+    for (size_t index = 0; index < residue_indexes.size(); ++index) {
         i = res_pairs[contact_prob[index].second].first;
         j = res_pairs[contact_prob[index].second].second;
         cm.push_back({i, j, contact_prob[index].first});
+    }
+}
+
+void getTrueCM(core::pose::Pose const& pose) {
+    const size_t residue_num = pose.total_residue();
+    vector<tuple<size_t, size_t, double>> contacts;
+    for (size_t res_index_1 = 1; res_index_1 <= residue_num; ++res_index_1) {
+        for (size_t res_index_2 = res_index_1 + 1; res_index_2 <= residue_num; ++res_index_2) {
+            string atom = "CB";
+
+            if (pose.residue(res_index_1).name1() == 'G' || pose.residue(res_index_2).name1() == 'G') {
+                atom = "CA";
+            }
+
+            double dist = pose.residue(res_index_1).xyz(atom).distance(pose.residue(res_index_2).xyz(atom));
+            if (evo_alg::utils::numericLowerEqual(dist, 8.0)) {
+                contacts.push_back({res_index_1, res_index_2, 1.0});
+            }
+        }
+    }
+    shuffle(contacts.begin(), contacts.end(), evo_alg::utils::rng);
+    for (size_t index = 0; index < residue_indexes.size(); ++index) {
+        cm.push_back(contacts[index]);
     }
 }
 
@@ -155,16 +178,17 @@ pair<double, double> ssScore(core::pose::Pose const& pose) {
 
     double ss_score = 0, ss_total = 0;
     for (size_t ss_index = 0; ss_index < protein_ss.size(); ++ss_index) {
-        double og_prob;
         if (ss[ss_index] == 'L')
-            og_prob = ss_prob[ss_index][0];
-        if (ss[ss_index] == 'H')
-            og_prob = ss_prob[ss_index][1];
-        if (ss[ss_index] == 'E')
-            og_prob = ss_prob[ss_index][2];
-
-        if (og_prob < 0.75)
             continue;
+
+        double og_prob;
+        if (ss[ss_index] == 'H') {
+            og_prob = ss_prob[ss_index][1];
+        }
+        if (ss[ss_index] == 'E') {
+            og_prob = ss_prob[ss_index][2];
+        }
+
         ss_total += og_prob;
 
         if (protein_ss[ss_index] == 'L')
@@ -195,13 +219,19 @@ pair<double, double> cmScore(core::pose::Pose const& pose) {
         if (evo_alg::utils::numericLowerEqual(dist, 8.0)) {
             cm_score += prob;
         } else {
-            cm_score += prob / exp(dist - 8 + evo_alg::utils::eps);
+            cm_score += prob / exp(dist - 8);
         }
 
         cm_total += prob;
     }
 
     return {cm_score, cm_total};
+}
+
+void repackProtein(core::pose::Pose& pose, core::scoring::ScoreFunctionOP& scorefnx) {
+    core::pack::task::PackerTaskOP task = core::pack::task::TaskFactory::create_packer_task(pose);
+    task->restrict_to_repacking();
+    core::pack::pack_rotamers(pose, *scorefnx, task);
 }
 
 class RosettaFaEnergyFunction : public evo_alg::FitnessFunction<double> {
@@ -228,7 +258,7 @@ class RosettaFaEnergyFunction : public evo_alg::FitnessFunction<double> {
         return create(protein_structure_.sequence());
     }
 
-    fitness_t operator()(evo_alg::Genotype<double> const& genotype) override {
+    evo_alg::fitness::FitnessValue operator()(evo_alg::Genotype<double> const& genotype) override {
         vector<double> chromosome = genotype.getChromosome();
         size_t angle_idx = 0;
         size_t residue_num = protein_structure_.total_residue();
@@ -260,10 +290,10 @@ class RosettaFaEnergyFunction : public evo_alg::FitnessFunction<double> {
 
     vector<double> getScores(core::pose::Pose& pose) {
         double ss_score, ss_total;
-        tie(ss_score, ss_total) = ssScore(protein_structure_);
+        tie(ss_score, ss_total) = ssScore(pose);
 
         double cm_score, cm_total;
-        tie(cm_score, cm_total) = cmScore(protein_structure_);
+        tie(cm_score, cm_total) = cmScore(pose);
 
         double rosetta_score = energy_score_->score(pose);
 

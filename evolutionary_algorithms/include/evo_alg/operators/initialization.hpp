@@ -4,6 +4,8 @@
 #include "../../../include/evo_alg/commons/utils.hpp"
 #include "../../../include/evo_alg/core.hpp"
 
+#include <functional>
+
 namespace evo_alg {
     namespace initializator {
         template <class IndividualType, class FitnessType>

@@ -3,6 +3,8 @@
 
 #include "../../../include/evo_alg/core.hpp"
 
+#include <functional>
+
 namespace evo_alg {
     namespace mutator {
         template <class IndividualType>

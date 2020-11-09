@@ -1,6 +1,4 @@
-#include "protein_commons.hpp"
-
-#include <evo_alg/algorithms/brkga.hpp>
+#include "brkga_commons.hpp"
 
 class RosettaCentroidEnergyFunction : public evo_alg::FitnessFunction<double> {
   public:
@@ -26,7 +24,7 @@ class RosettaCentroidEnergyFunction : public evo_alg::FitnessFunction<double> {
         return create(protein_structure_.sequence());
     }
 
-    fitness_t operator()(evo_alg::Genotype<double> const& genotype) override {
+    evo_alg::fitness::FitnessValue operator()(evo_alg::Genotype<double> const& genotype) override {
         vector<double> chromosome = genotype.getChromosome();
         size_t angle_idx = 0;
         size_t residue_num = protein_structure_.total_residue();
@@ -48,20 +46,18 @@ class RosettaCentroidEnergyFunction : public evo_alg::FitnessFunction<double> {
 
         double rosetta_score = energy_score_->score(protein_structure_);
         rosetta_score = 1 - rosetta_score / max_energy;
-        if (rosetta_score < 0)
-            rosetta_score = 0;
 
-        double result = (rosetta_score + ss_score) / 2;
+        double result = rosetta_score * 0.1 + ss_score * 0.3 + cm_score * 0.6;
 
         return {result};
     }
 
     vector<double> getScores(core::pose::Pose& pose) {
         double ss_score, ss_total;
-        tie(ss_score, ss_total) = ssScore(protein_structure_);
+        tie(ss_score, ss_total) = ssScore(pose);
 
         double cm_score, cm_total;
-        tie(cm_score, cm_total) = cmScore(protein_structure_);
+        tie(cm_score, cm_total) = cmScore(pose);
 
         double rosetta_score = energy_score_->score(pose);
 
@@ -71,88 +67,12 @@ class RosettaCentroidEnergyFunction : public evo_alg::FitnessFunction<double> {
   private:
     RosettaCentroidEnergyFunction(size_t num_angles, core::pose::Pose& protein_structure)
         : FitnessFunction<double>({num_angles, {-180, 180}}), protein_structure_{protein_structure},
-          energy_score_{core::scoring::ScoreFunctionFactory::create_score_function("score3")} {};
+          energy_score_{core::scoring::ScoreFunctionFactory::create_score_function("score3", "score4L")} {};
 
     static constexpr size_t dimension_ = 1;
     core::pose::Pose protein_structure_;
     core::scoring::ScoreFunctionOP energy_score_;
 };
-
-vector<double> frag3Decoder(vector<double> const& encoded_chromosome) {
-    vector<double> decoded_chromosome;
-    for (size_t gene_index = 0; gene_index < encoded_chromosome.size(); ++gene_index) {
-        size_t res_index = gene_index * 3;
-        if (res_index >= frag3.size()) {
-            res_index -= res_index - frag3.size() + 1;
-        }
-        size_t frag_index = floor(encoded_chromosome[gene_index] * frag3[res_index].size());
-        vector<vector<double>> fragment = frag3[res_index][frag_index];
-        for (size_t res_offset = 0; res_offset < fragment.size(); ++res_offset) {
-            decoded_chromosome.push_back(fragment[res_offset][0]);
-            decoded_chromosome.push_back(fragment[res_offset][1]);
-            decoded_chromosome.push_back(fragment[res_offset][2]);
-
-            for (size_t chi_idx = 0; chi_idx < residue_chi_num[res_index + res_offset]; ++chi_idx)
-                decoded_chromosome.push_back(0.0);
-        }
-    }
-
-    return decoded_chromosome;
-}
-
-vector<double> frag9Decoder(vector<double> const& encoded_chromosome) {
-    vector<double> decoded_chromosome;
-    for (size_t gene_index = 0; gene_index < encoded_chromosome.size(); ++gene_index) {
-        size_t res_index = gene_index * 9;
-        if (res_index >= frag9.size()) {
-            res_index -= res_index - frag9.size() + 1;
-        }
-        size_t frag_index = floor(encoded_chromosome[gene_index] * frag9[res_index].size());
-        vector<vector<double>> fragment = frag9[res_index][frag_index];
-        for (size_t res_offset = 0; res_offset < fragment.size(); ++res_offset) {
-            decoded_chromosome.push_back(fragment[res_offset][0]);
-            decoded_chromosome.push_back(fragment[res_offset][1]);
-            decoded_chromosome.push_back(fragment[res_offset][2]);
-
-            for (size_t chi_idx = 0; chi_idx < residue_chi_num[res_index + res_offset]; ++chi_idx)
-                decoded_chromosome.push_back(0.0);
-        }
-    }
-
-    return decoded_chromosome;
-}
-
-vector<double> residueDecoder(vector<double> const& encoded_chromosome) {
-    vector<double> decoded_chromosome;
-    for (size_t gene_index = 0; gene_index < encoded_chromosome.size(); gene_index += 2) {
-        decoded_chromosome.push_back(-180 + encoded_chromosome[gene_index] * 360);
-        decoded_chromosome.push_back(-180 + encoded_chromosome[gene_index + 1] * 360);
-        decoded_chromosome.push_back(180);
-
-        for (size_t chi_idx = 0; chi_idx < residue_chi_num[gene_index / 2]; ++chi_idx)
-            decoded_chromosome.push_back(0.0);
-    }
-
-    return decoded_chromosome;
-}
-
-vector<double> protein_angles;
-
-vector<double> refineDecoder(vector<double> const& encoded_chromosome) {
-    vector<double> decoded_chromosome;
-    for (size_t res_index = 0; res_index < residue_indexes.size(); ++res_index) {
-        double phi_delta = -10 + encoded_chromosome[res_index * 2] * 20;
-        double psi_delta = -10 + encoded_chromosome[res_index * 2 + 1] * 20;
-        decoded_chromosome.push_back(protein_angles[residue_indexes[res_index]] + phi_delta);
-        decoded_chromosome.push_back(protein_angles[residue_indexes[res_index] + 1] + psi_delta);
-        decoded_chromosome.push_back(protein_angles[residue_indexes[res_index] + 2]);
-
-        for (size_t chi_idx = 0; chi_idx < residue_chi_num[res_index]; ++chi_idx)
-            decoded_chromosome.push_back(0.0);
-    }
-
-    return decoded_chromosome;
-}
 
 // argv -> 1: protein name | 2: start offset of pdb structure (default 1) | 3: rmsd file name
 int main(int argc, char** argv) {
@@ -214,16 +134,15 @@ int main(int argc, char** argv) {
 
     core::scoring::dssp::Dssp dssp_native(native_structure);
 
-    // getSS(protein_name);
-    getTrueSS(dssp_native.get_dssp_secstruct());
+    getSS(protein_name);
     getFragments(protein_name, 3, frag3, frag3_prob);
     getFragments(protein_name, 9, frag9, frag9_prob);
     getContactMap(protein_name);
 
     evo_alg::FitnessFunction<double>::shared_ptr fit_centroid(RosettaCentroidEnergyFunction::create(sequence));
     core::scoring::ScoreFunctionOP energy_score_centroid =
-        core::scoring::ScoreFunctionFactory::create_score_function("score3");
-    max_energy = 200;
+        core::scoring::ScoreFunctionFactory::create_score_function("score3", "score4L");
+    max_energy = energy_score_centroid->score(pose);
 
     evo_alg::FitnessFunction<double>::shared_ptr fit_fa(RosettaFaEnergyFunction::create(sequence));
     core::scoring::ScoreFunctionOP energy_score_fa =
@@ -237,29 +156,30 @@ int main(int argc, char** argv) {
     cout << "Sec. Struct: " << ss << endl << endl;
 
     evo_alg::Population<evo_alg::Individual<double>> pop;
-    evo_alg::Individual<double> best_ind;
     vector<double> best_fit, mean_fit, diversity;
 
     size_t frag3_chromosome_size = ceil(residue_indexes.size() / 3.0);
     size_t frag9_chromosome_size = ceil(residue_indexes.size() / 9.0);
     size_t simple_chromosome_size = residue_indexes.size() * 2;
 
-    size_t iteration_num = 1000;
-    size_t pop_size = 250;
-    double elite_x = 0.3;
+    size_t iteration_num = 100;
+    size_t pop_size = 200;
+    double elite_x = 0.2;
     double mut_x = 0.3;
     double cr_x = 0.55;
     double diversity_threshold = 0.2;
+    double diversity_enforcement = 0.7;
 
     auto update_fn = [&](evo_alg::brkga::config_t<evo_alg::FitnessFunction<double>>& config, size_t it) {
         if (it > iteration_num / 3) {
             double progress = (3.0 * it / (double)iteration_num - 1);
-            double min_cross_pr = 1 - 3.0 / config.chromosome_size;
-            config.elite_fraction =
-                max((5.0 / config.pop_size), elite_x - (elite_x - (5.0 / config.pop_size)) * progress);
-            config.diversity_threshold = max(0.0, diversity_threshold - (diversity_threshold - 0) * progress);
+            double min_cross_pr = max(2.0 / 3, 1 - 3.0 / config.chromosome_size);
+            // config.elite_fraction =
+            // max((5.0 / config.pop_size), elite_x - (elite_x - (5.0 / config.pop_size)) * progress);
+            // config.diversity_threshold = max(0.0, diversity_threshold - (diversity_threshold - 0) * progress);
+            config.diversity_enforcement = max(0.0, diversity_enforcement * (1 - progress));
             config.elite_cross_pr = min(min_cross_pr, cr_x + (min_cross_pr - cr_x) * progress);
-            config.mut_fraction = min(0.4, mut_x + (0.4 - mut_x) * progress);
+            // config.mut_fraction = min(0.4, mut_x + (0.4 - mut_x) * progress);
         }
     };
 
@@ -267,11 +187,13 @@ int main(int argc, char** argv) {
         iteration_num, pop_size, frag9_chromosome_size, elite_x, mut_x, cr_x, fit_centroid, frag9Decoder);
 
     brkga_config.diversity_threshold = diversity_threshold;
+    brkga_config.diversity_enforcement = diversity_enforcement;
     brkga_config.log_step = 1;
     brkga_config.update_fn = update_fn;
 
-    tie(best_ind, pop, best_fit, mean_fit, diversity) =
+    tie(pop, best_fit, mean_fit, diversity) =
         evo_alg::brkga::run<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(brkga_config);
+    evo_alg::Individual<double> best_ind = pop[pop.getBestIndividuals()[0]];
 
     protein_angles = best_ind.getChromosome();
     vector<double> chromosome_pre = best_ind.getChromosome();
@@ -281,8 +203,9 @@ int main(int argc, char** argv) {
     brkga_config.initial_pop = vector<vector<double>>(pop_size, vector<double>(simple_chromosome_size, 0.5));
 
     vector<double> best_fit_2, mean_fit_2, diversity_2;
-    tie(best_ind, pop, best_fit_2, mean_fit_2, diversity_2) =
+    tie(pop, best_fit_2, mean_fit_2, diversity_2) =
         evo_alg::brkga::run<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(brkga_config);
+    best_ind = pop[pop.getBestIndividuals()[0]];
 
     for (size_t index = 0; index < best_fit_2.size(); ++index) {
         best_fit.push_back(best_fit_2[index]);
@@ -343,6 +266,7 @@ int main(int argc, char** argv) {
     core::scoring::dssp::Dssp dssp0(faPose);
 
     cout << "Native: " << dssp_native.get_dssp_secstruct() << endl;
+    cout << "SS:     " << ss << endl;
     cout << "Found:  " << dssp0.get_dssp_secstruct() << endl << endl;
 
     if (pose_start - 1 > 0) {
@@ -400,6 +324,7 @@ int main(int argc, char** argv) {
     core::scoring::dssp::Dssp dssp1(faPose);
 
     cout << "Native: " << dssp_native.get_dssp_secstruct() << endl;
+    cout << "SS:     " << ss << endl;
     cout << "Found:  " << dssp1.get_dssp_secstruct() << endl << endl;
 
     if (pose_start - 1 > 0) {
@@ -417,8 +342,9 @@ int main(int argc, char** argv) {
         }
     }
 
-    protocols::relax::FastRelax fast_relax(energy_score_fa);
-    fast_relax.apply(faPose);
+    // protocols::relax::FastRelax fast_relax(energy_score_fa);
+    // fast_relax.apply(faPose);
+    repackProtein(faPose, energy_score_fa);
 
     scores = dynamic_pointer_cast<RosettaFaEnergyFunction>(fit_fa)->getScores(faPose);
 

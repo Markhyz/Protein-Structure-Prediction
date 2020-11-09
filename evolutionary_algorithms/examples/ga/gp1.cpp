@@ -20,7 +20,7 @@ class GeneralizedPenalizedFunction : public evo_alg::FitnessFunction<double> {
         return new GeneralizedPenalizedFunction(*this);
     }
 
-    fitness_t operator()(evo_alg::Genotype<double> const& genotype) override {
+    FitnessValue operator()(evo_alg::Genotype<double> const& genotype) override {
         vector<double> chromosome = genotype.getChromosome();
         double const pi = acos(-1);
         double k = 100, a = 10, m = 4;
@@ -71,10 +71,11 @@ int main(int argc, char** argv) {
 
     evo_alg::Population<evo_alg::Individual<double>> pop;
     evo_alg::Individual<double> best_ind;
-        vector<double> best_fit, mean_fit, diversity;
-    tie(best_ind, pop, best_fit, mean_fit, diversity) = evo_alg::ga<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(
-        2000, 100, 1, fit, evo_alg::initializator::uniformRandomInit<double>, tournamentSelection, sbxCrossover, 0.95,
-        polynomialMutation, 1 / (double) n, 1);
+    vector<double> best_fit, mean_fit, diversity;
+    tie(best_ind, pop, best_fit, mean_fit, diversity) =
+        evo_alg::ga<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(
+            2000, 100, 1, fit, evo_alg::initializator::uniformRandomInit<double>, tournamentSelection, sbxCrossover,
+            0.95, polynomialMutation, 1 / (double) n, 1);
 
     evo_alg::Individual<double> true_ind(fit, vector<double>(n, -1));
     true_ind.evaluateFitness();
@@ -83,7 +84,7 @@ int main(int argc, char** argv) {
     cout.precision(9);
     cout << "true " << true_ind.getFitnessValue()[0] << " / found " << best_ind.getFitnessValue()[0] << endl;
 
-        ofstream fit_out("res.fit"), diver_out("res.diver");
+    ofstream fit_out("res.fit"), diver_out("res.diver");
     diver_out << fixed;
 
     fit_out << fixed;

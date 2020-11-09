@@ -4,6 +4,7 @@
 #include "../../../include/evo_alg/core.hpp"
 
 #include <utility>
+#include <functional>
 
 namespace evo_alg {
     namespace recombinator {

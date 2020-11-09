@@ -27,7 +27,8 @@ namespace evo_alg {
         size_t getSize() const;
         IndividualType const& getIndividual(size_t const index) const;
         std::vector<size_t> getBestIndividuals() const;
-        std::vector<size_t> getSortedIndividuals() const;
+        std::vector<size_t> getSortedIndividuals(size_t const fitness_index = 0) const;
+        std::vector<std::vector<size_t>> getFrontiers(bool const crowding_sort = false) const;
 
         void setIndividual(size_t const index, IndividualType const& individual);
 
@@ -69,26 +70,30 @@ namespace evo_alg {
 
     template <class IndividualType>
     std::vector<size_t> Population<IndividualType>::getBestIndividuals() const {
-        std::vector<size_t> best_individuals;
-        size_t best_individual = 0;
-        for (size_t index = 1; index < population_.size(); ++index)
-            if (population_[index] > population_[best_individual])
-                best_individual = index;
-        for (size_t index = 0; index < population_.size(); ++index)
-            if (!(population_[index] < population_[best_individual]))
-                best_individuals.push_back(index);
-
-        return best_individuals;
+        return getFrontiers()[0];
     }
 
     template <class IndividualType>
-    std::vector<size_t> Population<IndividualType>::getSortedIndividuals() const {
+    std::vector<size_t> Population<IndividualType>::getSortedIndividuals(size_t const fitness_index) const {
         std::vector<size_t> sorted_individuals(population_.size());
         std::iota(sorted_individuals.begin(), sorted_individuals.end(), 0);
         std::sort(sorted_individuals.rbegin(), sorted_individuals.rend(),
-                  [this](size_t const ind_1, size_t const ind_2) { return population_[ind_1] < population_[ind_2]; });
+                  [this, &fitness_index](size_t const ind_1, size_t const ind_2) {
+                      return population_[ind_1].getFitnessValue()[fitness_index] <
+                             population_[ind_2].getFitnessValue()[fitness_index];
+                  });
 
         return sorted_individuals;
+    }
+
+    template <class IndividualType>
+    std::vector<std::vector<size_t>> Population<IndividualType>::getFrontiers(bool const crowding_sort) const {
+        std::vector<fitness::FitnessValue> pop_fitness(population_.size());
+        for (size_t index = 0; index < population_.size(); ++index) {
+            pop_fitness[index] = population_[index].getFitnessValue();
+        }
+
+        return fitness::nonDominatedSorting(pop_fitness, crowding_sort);
     }
 
     template <class IndividualType>

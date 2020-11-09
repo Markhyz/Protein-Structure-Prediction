@@ -19,7 +19,7 @@ class IntegerSum : public evo_alg::FitnessFunction<bool> {
         return new IntegerSum(*this);
     }
 
-    fitness_t operator()(evo_alg::Genotype<bool> const& genotype) override {
+    FitnessValue operator()(evo_alg::Genotype<bool> const& genotype) override {
         vector<bool> chromosome = genotype.getChromosome();
         double result = 0.0;
         for (size_t i = 0; i < values_.size(); ++i)

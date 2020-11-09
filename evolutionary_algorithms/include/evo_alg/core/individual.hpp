@@ -27,7 +27,7 @@ namespace evo_alg {
         std::vector<types::NthType<ChromosomeIndex, GeneTypes...>> getChromosome() const;
 
         typename FitnessFunction<GeneTypes...>::const_shared_ptr getFitnessFunction() const;
-        typename FitnessFunction<GeneTypes...>::fitness_t const& getFitnessValue() const;
+        typename fitness::FitnessValue const& getFitnessValue() const;
 
         template <size_t ChromosomeIndex = 0>
         double getEuclidianDistance(Individual<GeneTypes...> const& target_ind) const;
@@ -43,7 +43,7 @@ namespace evo_alg {
         template <size_t ChromosomeIndex = 0, typename... Args>
         void setChromosome(Args&&... args);
 
-        void setFitnessValue(typename FitnessFunction<GeneTypes...>::fitness_t const fitness_value);
+        void setFitnessValue(typename fitness::FitnessValue const fitness_value);
 
         bool operator<(Individual<GeneTypes...> const& ind) const;
         bool operator>(Individual<GeneTypes...> const& ind) const;
@@ -82,7 +82,7 @@ namespace evo_alg {
     }
 
     template <typename... GeneTypes>
-    typename FitnessFunction<GeneTypes...>::fitness_t const& Individual<GeneTypes...>::getFitnessValue() const {
+    typename fitness::FitnessValue const& Individual<GeneTypes...>::getFitnessValue() const {
         return phenotype_.getFitnessValue();
     }
 
@@ -129,29 +129,13 @@ namespace evo_alg {
     }
 
     template <typename... GeneTypes>
-    void
-    Individual<GeneTypes...>::setFitnessValue(typename FitnessFunction<GeneTypes...>::fitness_t const fitness_value) {
+    void Individual<GeneTypes...>::setFitnessValue(typename fitness::FitnessValue const fitness_value) {
         phenotype_.setFitnessValue(fitness_value);
     }
 
     template <typename... GeneTypes>
     bool Individual<GeneTypes...>::operator<(Individual<GeneTypes...> const& ind) const {
-        size_t const fitness_dimension = getFitnessFunction()->getDimension();
-        typename FitnessFunction<GeneTypes...>::fitness_t cur_individual_fitness = getFitnessValue();
-        typename FitnessFunction<GeneTypes...>::fitness_t individual_fitness = ind.getFitnessValue();
-        if (fitness_dimension == 1) {
-            return utils::numericLower(cur_individual_fitness[0], individual_fitness[0]);
-        } else {
-            bool equal = true;
-            for (size_t index = 0; index < fitness_dimension; ++index) {
-                if (utils::numericGreater(cur_individual_fitness[index], individual_fitness[index]))
-                    return false;
-                if (utils::numericLower(cur_individual_fitness[index], individual_fitness[index]))
-                    equal = false;
-            }
-
-            return !equal;
-        }
+        return phenotype_.getFitnessValue() < ind.getFitnessValue();
     }
 
     template <typename... GeneTypes>

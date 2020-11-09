@@ -38,7 +38,7 @@ class AckleyFunction : public evo_alg::FitnessFunction<double> {
         return encoded_values;
     }
 
-    fitness_t operator()(evo_alg::Genotype<double> const& genotype) override {
+    FitnessValue operator()(evo_alg::Genotype<double> const& genotype) override {
         vector<double> chromosome = decode(genotype.getChromosome());
         double n = (double) chromosome.size();
         double const pi = acos(-1);

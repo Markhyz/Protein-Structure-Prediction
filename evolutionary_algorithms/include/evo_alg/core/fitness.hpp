@@ -14,15 +14,43 @@ namespace evo_alg {
         std::vector<double> linearNormalization(std::vector<double> const& fitness_values, double const min_value,
                                                 double const max_value);
 
-        using fitness_t = std::vector<double>;
+        class FitnessValue {
+          public:
+            POINTER_ALIAS(FitnessValue)
+
+            FitnessValue();
+            FitnessValue(std::vector<double> values);
+            FitnessValue(std::initializer_list<double> values);
+
+            std::vector<double> const& getValues() const;
+
+            size_t getDimension() const;
+
+            double& operator[](size_t const index);
+            double operator[](size_t const index) const;
+
+            bool operator==(FitnessValue const& target_fit) const;
+            bool operator!=(FitnessValue const& target_fit) const;
+            bool operator<(FitnessValue const& target_fit) const;
+            bool operator>(FitnessValue const& target_fit) const;
+            bool operator<=(FitnessValue const& target_fit) const;
+            bool operator>=(FitnessValue const& target_fit) const;
+
+          private:
+            std::vector<double> fitness_values_;
+        };
+
+        using frontier_t = std::vector<FitnessValue>;
+
+        std::vector<double> crowdingDistance();
+        std::vector<std::vector<size_t>> nonDominatedSorting(std::vector<FitnessValue> const& fitness_values,
+                                                             bool const crowding_sort = false);
     }
 
     template <typename... GeneTypes>
     class FitnessFunction {
       public:
         POINTER_ALIAS(FitnessFunction<GeneTypes...>)
-
-        using fitness_t = fitness::fitness_t;
 
         using gene_bounds_t = std::variant<std::pair<GeneTypes, GeneTypes>...>;
         using chromosome_bounds_t = std::vector<gene_bounds_t>;
@@ -52,7 +80,7 @@ namespace evo_alg {
 
         virtual FitnessFunction* clone() const = 0;
 
-        virtual fitness_t operator()(Genotype<GeneTypes...> const& genotype) = 0;
+        virtual fitness::FitnessValue operator()(Genotype<GeneTypes...> const& genotype) = 0;
 
       private:
         std::vector<chromosome_bounds_t> bounds_;

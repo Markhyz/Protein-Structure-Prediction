@@ -21,7 +21,7 @@ namespace evo_alg {
             BrkgaFitness(size_t chromosome_size, typename FitnessType::const_shared_ptr fitness,
                          decoding_function_t decoder)
                 : FitnessFunction<double>({chromosome_size, {0, 1}}), chromosome_size_(chromosome_size),
-                  fitness_(fitness->clone()), decoder_(decoder){};
+                  fitness_(fitness->clone()), decoder_(decoder), dimension_(fitness->getDimension()){};
 
             size_t getDimension() const override {
                 return dimension_;
@@ -31,10 +31,10 @@ namespace evo_alg {
                 return new BrkgaFitness(chromosome_size_, fitness_, decoder_);
             }
 
-            fitness_t operator()(evo_alg::Genotype<double> const& genotype) override {
+            fitness::FitnessValue operator()(evo_alg::Genotype<double> const& genotype) override {
                 std::vector<double> encoded_chromosome = genotype.getChromosome();
 
-                std::vector<double> result = (*fitness_)({decoder_(encoded_chromosome)});
+                fitness::FitnessValue result = (*fitness_)({decoder_(encoded_chromosome)});
 
                 return result;
             }
@@ -43,7 +43,7 @@ namespace evo_alg {
             size_t chromosome_size_;
             typename FitnessType::shared_ptr fitness_;
             decoding_function_t decoder_;
-            size_t dimension_ = 1;
+            size_t dimension_;
         };
 
         template <class FitnessType>
@@ -53,7 +53,7 @@ namespace evo_alg {
                      decoding_function_t decoder)
                 : iteration_num(iteration_num), pop_size(pop_size), chromosome_size(chromosome_size),
                   elite_fraction(elite_fraction), mut_fraction(mut_fraction), elite_cross_pr(elite_cross_pr),
-                  fitness(fitness), decoder(decoder){};
+                  fitness(fitness), decoder(decoder), archive_size(pop_size){};
 
             size_t iteration_num;
             size_t pop_size;
@@ -63,18 +63,17 @@ namespace evo_alg {
             double elite_cross_pr;
             typename FitnessType::const_shared_ptr fitness;
             decoding_function_t decoder;
+            size_t archive_size;
             size_t log_step = 0;
-            double diversity_threshold = 0;
+            double diversity_threshold = 0.0;
+            double diversity_enforcement = 1.0;
             double convergence_threshold = NAN;
-            size_t convergence_interval = 0;
-            double convergence_eps = utils::eps;
             std::vector<std::vector<double>> initial_pop;
             std::function<void(config_t&, size_t)> update_fn;
         };
 
         template <class IndividualType, class FitnessType>
-        std::tuple<IndividualType, Population<IndividualType>, std::vector<double>, std::vector<double>,
-                   std::vector<double>>
+        std::tuple<Population<IndividualType>, std::vector<double>, std::vector<double>, std::vector<double>>
         run(config_t<FitnessType> config) {
             size_t const iteration_num = config.iteration_num;
             size_t const pop_size = config.pop_size;
@@ -119,30 +118,29 @@ namespace evo_alg {
             mean_fit.push_back(population.getMeanFitness());
             diversity.push_back(population.getPairwiseDiversity());
 
-            real_individual_t best_individual = population[population.getBestIndividuals()[0]];
-            size_t convergence_level = 0;
             for (size_t it = 0; it < iteration_num; ++it) {
                 tt1 = std::chrono::high_resolution_clock::now();
-
-                std::vector<double> pop_fitness(pop_size);
-                for (size_t index = 0; index < pop_size; ++index)
-                    pop_fitness[index] = population[index].getFitnessValue()[0];
 
                 initializator::uniformRandomInit(new_population, brkga_fitness, mut_size);
 
                 std::vector<size_t> sorted_individuals = population.getSortedIndividuals();
                 std::vector<size_t> diversified_individuals, remaining_individuals;
+                size_t allow_bad = (size_t)(elite_size * (1.0 - config.diversity_enforcement));
                 for (size_t index = 0; index < sorted_individuals.size(); ++index) {
                     if (diversified_individuals.size() < elite_size) {
                         real_individual_t const& ind_1 = population[sorted_individuals[index]];
-                        size_t index_2 = 0;
-                        for (; index_2 < diversified_individuals.size(); ++index_2) {
+                        bool bad = false;
+                        for (size_t index_2 = 0; index_2 < diversified_individuals.size(); ++index_2) {
                             real_individual_t const& ind_2 = population[diversified_individuals[index_2]];
                             double const distance = ind_1.getEuclidianDistance(ind_2);
-                            if (distance < config.diversity_threshold)
-                                break;
+                            if (distance < config.diversity_threshold) {
+                                bad = true;
+                            }
                         }
-                        if (index_2 == diversified_individuals.size()) {
+                        if (!bad || allow_bad) {
+                            if (allow_bad) {
+                                --allow_bad;
+                            }
                             diversified_individuals.push_back(sorted_individuals[index]);
                             continue;
                         }
@@ -186,20 +184,7 @@ namespace evo_alg {
                     population[index].setFitnessValue(new_population[index].getFitnessValue());
                 }
 
-                size_t const current_best_individual = population.getBestIndividuals()[0];
-                if (utils::numericEqual(population[current_best_individual].getFitnessValue()[0],
-                                        best_individual.getFitnessValue()[0], config.convergence_eps)) {
-                    ++convergence_level;
-                } else {
-                    convergence_level = 0;
-                }
-
-                if (population[current_best_individual] > best_individual) {
-                    best_individual.setChromosome(population[current_best_individual].getChromosome());
-                    best_individual.setFitnessValue(population[current_best_individual].getFitnessValue());
-                }
-
-                double const best_fitness = best_individual.getFitnessValue()[0];
+                double const best_fitness = population[population.getBestIndividuals()[0]].getFitnessValue()[0];
                 best_fit.push_back(best_fitness);
 
                 double const mean_fitness = population.getMeanFitness(mut_size);
@@ -213,12 +198,12 @@ namespace evo_alg {
 
                 if (config.log_step > 0 && it % config.log_step == 0) {
                     printf(
-                        "Gen %lu -> best fitness: %.7f | mean fitness: %.7f | diversity: %.3f | e: %.2f | m: %.2f | c: "
-                        "%.2f",
+                        "Gen %lu -> best fitness: %.9f | mean fitness: %.9f | diversity: %.5f | e: %.2f | m: %.2f | c: "
+                        "%.2f | dt: %.2f | de: %.2f\n",
                         it, best_fitness, mean_fitness, diver, config.elite_fraction, config.mut_fraction,
-                        config.elite_cross_pr);
-                    printf(" || it: %.0fms | gen: %.0fms | eval: %.0fms\n", it_time.count(), gen_time.count(),
-                           eval_time.count());
+                        config.elite_cross_pr, config.diversity_threshold, config.diversity_enforcement);
+                    printf("%*s it: %.0fms | gen: %.0fms | eval: %.0fms\n", 7 + (int) ceil(log10(it ? it : 1)), "",
+                           it_time.count(), gen_time.count(), eval_time.count());
                 }
 
                 if (config.update_fn)
@@ -229,22 +214,235 @@ namespace evo_alg {
                 cross_size = pop_size - elite_size - mut_size;
 
                 if (!std::isnan(config.convergence_threshold) &&
-                    utils::numericGreater(best_individual.getFitnessValue()[0], config.convergence_threshold))
-                    break;
-
-                if (config.convergence_interval && convergence_level >= config.convergence_interval)
+                    utils::numericGreater(best_fitness, config.convergence_threshold))
                     break;
             }
-
-            IndividualType decoded_best_individual = {fitness, decoder(best_individual.getChromosome())};
-            decoded_best_individual.setFitnessValue(best_individual.getFitnessValue());
 
             for (size_t index = 0; index < pop_size; ++index) {
                 decoded_population[index].setChromosome(decoder(population[index].getChromosome()));
                 decoded_population[index].setFitnessValue(population[index].getFitnessValue());
             }
 
-            return {decoded_best_individual, decoded_population, best_fit, mean_fit, diversity};
+            return {decoded_population, best_fit, mean_fit, diversity};
+        }
+
+        template <class PopulationType>
+        void updateArchive(PopulationType const& pop, PopulationType& archive, size_t& archive_current_size) {
+            std::vector<std::vector<double>> total_chromosomes;
+            std::vector<fitness::FitnessValue> total_fitness_values;
+
+            for (size_t index = 0; index < pop.getSize(); ++index) {
+                total_chromosomes.push_back(pop[index].getChromosome());
+                total_fitness_values.push_back(pop[index].getFitnessValue());
+            }
+
+            for (size_t index = 0; index < archive_current_size; ++index) {
+                total_chromosomes.push_back(archive[index].getChromosome());
+                total_fitness_values.push_back(archive[index].getFitnessValue());
+            }
+
+            std::vector<std::vector<size_t>> frontiers = fitness::nonDominatedSorting(total_fitness_values, true);
+
+            size_t archive_size = 0;
+            for (std::vector<size_t>& frontier : frontiers) {
+                if (archive_size == archive.getSize()) {
+                    break;
+                }
+                for (size_t ind : frontier) {
+                    if (archive_size == archive.getSize()) {
+                        break;
+                    }
+                    archive[archive_size].setChromosome(total_chromosomes[ind]);
+                    archive[archive_size].setFitnessValue(total_fitness_values[ind]);
+                    ++archive_size;
+                }
+            }
+            archive_current_size = archive_size;
+        }
+
+        template <class IndividualType, class FitnessType>
+        std::tuple<Population<IndividualType>, Population<IndividualType>, std::vector<fitness::frontier_t>,
+                   std::vector<double>>
+        runMultiObjective(config_t<FitnessType> config) {
+            size_t const iteration_num = config.iteration_num;
+            size_t const pop_size = config.pop_size;
+            size_t const archive_size = config.archive_size;
+            size_t const chromosome_size = config.chromosome_size;
+            typename FitnessType::const_shared_ptr const fitness = config.fitness;
+            decoding_function_t decoder = config.decoder;
+            std::vector<std::vector<double>> const& initial_pop = config.initial_pop;
+
+            FitnessFunction<double>::shared_ptr brkga_fitness(
+                new BrkgaFitness<FitnessType>(chromosome_size, fitness, decoder));
+
+            size_t elite_size = (size_t)((double) pop_size * config.elite_fraction);
+            size_t mut_size = (size_t)((double) pop_size * config.mut_fraction);
+            size_t cross_size = pop_size - elite_size - mut_size;
+
+            std::chrono::duration<double, std::milli> it_time, gen_time, eval_time;
+            std::chrono::time_point<std::chrono::high_resolution_clock> t1, t2, tt1, tt2;
+
+            Population<real_individual_t> population(pop_size), new_population(pop_size), archive(archive_size);
+            Population<IndividualType> decoded_population(pop_size), decoded_archive(archive_size);
+
+            std::vector<real_individual_t> best_individuals(pop_size);
+
+#pragma omp parallel for schedule(dynamic)
+            for (size_t index = 0; index < pop_size; ++index) {
+                population[index] = {brkga_fitness};
+                new_population[index] = {brkga_fitness};
+                best_individuals[index] = {brkga_fitness};
+                decoded_population[index] = {fitness};
+            }
+
+#pragma omp parallel for schedule(dynamic)
+            for (size_t index = 0; index < archive_size; ++index) {
+                archive[index] = {brkga_fitness};
+                decoded_archive[index] = {fitness};
+            }
+
+            if (pop_size - initial_pop.size() > 0) {
+                initializator::uniformRandomInit(population, brkga_fitness, pop_size - initial_pop.size());
+            }
+            for (size_t index = 0; index < initial_pop.size(); ++index) {
+                population[pop_size - initial_pop.size() + index].setChromosome(initial_pop[index]);
+            }
+
+            population.evaluateFitness();
+
+            real_individual_t child(population[0]);
+
+            size_t archive_current_size = 0;
+
+            updateArchive(population, archive, archive_current_size);
+
+            std::vector<fitness::frontier_t> best_frontiers;
+            std::vector<double> diversity;
+
+            std::vector<size_t> best_individuals_index = archive.getBestIndividuals();
+            fitness::frontier_t best_frontier;
+            for (size_t ind : best_individuals_index) {
+                best_frontier.push_back(archive[ind].getFitnessValue());
+            }
+            best_frontiers.push_back(best_frontier);
+            diversity.push_back(population.getPairwiseDiversity());
+
+            for (size_t it = 0; it < iteration_num; ++it) {
+                tt1 = std::chrono::high_resolution_clock::now();
+
+                initializator::uniformRandomInit(new_population, brkga_fitness, mut_size);
+
+                std::vector<std::vector<size_t>> frontiers = population.getFrontiers(true);
+                std::vector<size_t> sorted_individuals;
+                for (std::vector<size_t> const& frontier : frontiers) {
+                    for (size_t ind : frontier) {
+                        sorted_individuals.push_back(ind);
+                    }
+                }
+
+                std::vector<size_t> diversified_individuals, remaining_individuals;
+                size_t allow_bad = (size_t)(elite_size * (1.0 - config.diversity_enforcement));
+                for (size_t index = 0; index < sorted_individuals.size(); ++index) {
+                    if (diversified_individuals.size() < elite_size) {
+                        real_individual_t const& ind_1 = population[sorted_individuals[index]];
+                        bool bad = false;
+                        for (size_t index_2 = 0; index_2 < diversified_individuals.size(); ++index_2) {
+                            real_individual_t const& ind_2 = population[diversified_individuals[index_2]];
+                            double const distance = ind_1.getEuclidianDistance(ind_2);
+                            if (distance < config.diversity_threshold) {
+                                bad = true;
+                            }
+                        }
+                        if (!bad || allow_bad) {
+                            if (allow_bad) {
+                                --allow_bad;
+                            }
+                            diversified_individuals.push_back(sorted_individuals[index]);
+                            continue;
+                        }
+                    }
+                    remaining_individuals.push_back(sorted_individuals[index]);
+                }
+                for (size_t index = 0; index < remaining_individuals.size(); ++index) {
+                    diversified_individuals.push_back(remaining_individuals[index]);
+                }
+
+                for (size_t index = 0; index < elite_size; ++index) {
+                    const size_t ind_index = diversified_individuals[index];
+                    new_population[mut_size + index].setChromosome(population[ind_index].getChromosome());
+                }
+
+                t1 = std::chrono::high_resolution_clock::now();
+                for (size_t index = 0; index < cross_size; ++index) {
+                    std::uniform_int_distribution<size_t> elite_dist(0, elite_size - 1);
+                    std::uniform_int_distribution<size_t> non_elite_dist(elite_size, pop_size - 1);
+
+                    size_t const elite_parent = diversified_individuals[elite_dist(utils::rng)];
+                    size_t const non_elite_parent = diversified_individuals[non_elite_dist(utils::rng)];
+
+                    recombinator::eliteUniform<double>(population[elite_parent], population[non_elite_parent], child,
+                                                       config.elite_cross_pr);
+
+                    new_population[mut_size + elite_size + index].setChromosome(child.getChromosome());
+                }
+                t2 = std::chrono::high_resolution_clock::now();
+                gen_time = t2 - t1;
+
+                assert(mut_size + elite_size + cross_size == pop_size);
+
+                t1 = std::chrono::high_resolution_clock::now();
+                new_population.evaluateFitness();
+                t2 = std::chrono::high_resolution_clock::now();
+                eval_time = t2 - t1;
+
+                for (size_t index = 0; index < pop_size; ++index) {
+                    population[index].setChromosome(new_population[index].getChromosome());
+                    population[index].setFitnessValue(new_population[index].getFitnessValue());
+                }
+
+                updateArchive(population, archive, archive_current_size);
+
+                best_individuals_index = archive.getBestIndividuals();
+                best_frontier.clear();
+                for (size_t ind : best_individuals_index) {
+                    best_frontier.push_back(archive[ind].getFitnessValue());
+                }
+                best_frontiers.push_back(best_frontier);
+
+                double const diver = population.getPairwiseDiversity(mut_size);
+                diversity.push_back(diver);
+
+                tt2 = std::chrono::high_resolution_clock::now();
+                it_time = tt2 - tt1;
+
+                if (config.log_step > 0 && it % config.log_step == 0) {
+                    printf("Gen %lu -> best frontier size: %3lu | diversity: %.3f | e: %.2f | m: "
+                           "%.2f | c: %.2f | dt: %.2f | de: %.2f",
+                           it, best_individuals_index.size(), diver, config.elite_fraction, config.mut_fraction,
+                           config.elite_cross_pr, config.diversity_threshold, config.diversity_enforcement);
+                    printf(" || it: %.0fms | gen: %.0fms | eval: %.0fms\n", it_time.count(), gen_time.count(),
+                           eval_time.count());
+                }
+
+                if (config.update_fn)
+                    config.update_fn(config, it);
+
+                elite_size = (size_t)((double) pop_size * config.elite_fraction);
+                mut_size = (size_t)((double) pop_size * config.mut_fraction);
+                cross_size = pop_size - elite_size - mut_size;
+            }
+
+            for (size_t index = 0; index < pop_size; ++index) {
+                decoded_population[index].setChromosome(decoder(population[index].getChromosome()));
+                decoded_population[index].setFitnessValue(population[index].getFitnessValue());
+            }
+
+            for (size_t index = 0; index < archive_size; ++index) {
+                decoded_archive[index].setChromosome(decoder(archive[index].getChromosome()));
+                decoded_archive[index].setFitnessValue(archive[index].getFitnessValue());
+            }
+
+            return {decoded_population, decoded_archive, best_frontiers, diversity};
         }
     }
 }

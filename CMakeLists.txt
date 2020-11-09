@@ -15,6 +15,14 @@ add_executable(brkga_main brkga_main.cpp)
 target_link_libraries(brkga_main PRIVATE rosetta evo_alg)
 target_compile_features(brkga_main PUBLIC cxx_std_17)
 
+add_executable(mobrkga_main mobrkga_main.cpp)
+target_link_libraries(mobrkga_main PRIVATE rosetta evo_alg)
+target_compile_features(mobrkga_main PUBLIC cxx_std_17)
+
+add_executable(score_calc score_calc.cpp)
+target_link_libraries(score_calc PRIVATE rosetta)
+target_compile_features(score_calc PUBLIC cxx_std_17)
+
 if (MPI)
     find_package(MPI REQUIRED)
     message(STATUS "Run: ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} EXECUTABLE ${MPIEXEC_POSTFLAGS} ARGS")

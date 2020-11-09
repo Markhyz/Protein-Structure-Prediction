@@ -2,11 +2,12 @@
 #define GUARD_H_EVO_ALG_UTILS
 
 #include <chrono>
+#include <iostream>
 #include <random>
 
 namespace evo_alg {
     namespace utils {
-        constexpr double eps = 1e-15;
+        constexpr double eps = 1e-12;
 
         extern std::mt19937_64 rng;
 

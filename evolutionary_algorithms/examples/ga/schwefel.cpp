@@ -20,7 +20,7 @@ class SchwefelFunction : public evo_alg::FitnessFunction<double> {
         return new SchwefelFunction(*this);
     }
 
-    fitness_t operator()(evo_alg::Genotype<double> const& genotype) override {
+    FitnessValue operator()(evo_alg::Genotype<double> const& genotype) override {
         vector<double> chromosome = genotype.getChromosome();
         double n = (double) chromosome.size();
         double k = 0;

@@ -27,7 +27,7 @@ namespace evo_alg {
         void evaluateFitness(Genotype<GeneTypes...> const& genotype);
 
         typename FitnessFunction<GeneTypes...>::const_shared_ptr getFitnessFunction() const;
-        typename FitnessFunction<GeneTypes...>::fitness_t const& getFitnessValue() const;
+        typename fitness::FitnessValue const& getFitnessValue() const;
 
         template <size_t ChromosomeIndex = 0>
         std::vector<std::pair<types::NthType<ChromosomeIndex, GeneTypes...>,
@@ -37,13 +37,13 @@ namespace evo_alg {
         template <size_t ChromosomeIndex = 0, typename... Args>
         void setBounds(Args&&... args);
 
-        void setFitnessValue(typename FitnessFunction<GeneTypes...>::fitness_t const fitness_value);
+        void setFitnessValue(typename fitness::FitnessValue const fitness_value);
 
         Phenotype<GeneTypes...>& operator=(Phenotype<GeneTypes...> const& phenotype);
 
       private:
         typename FitnessFunction<GeneTypes...>::shared_ptr fitness_;
-        std::optional<typename FitnessFunction<GeneTypes...>::fitness_t> fitness_value_;
+        std::optional<typename fitness::FitnessValue> fitness_value_;
     };
 
     template <typename... GeneTypes>
@@ -68,7 +68,7 @@ namespace evo_alg {
     }
 
     template <typename... GeneTypes>
-    typename FitnessFunction<GeneTypes...>::fitness_t const& Phenotype<GeneTypes...>::getFitnessValue() const {
+    typename fitness::FitnessValue const& Phenotype<GeneTypes...>::getFitnessValue() const {
         if (!fitness_value_.has_value()) {
             throw UndefinedFitnessException();
         }
@@ -91,8 +91,7 @@ namespace evo_alg {
     }
 
     template <typename... GeneTypes>
-    void
-    Phenotype<GeneTypes...>::setFitnessValue(typename FitnessFunction<GeneTypes...>::fitness_t const fitness_value) {
+    void Phenotype<GeneTypes...>::setFitnessValue(typename fitness::FitnessValue const fitness_value) {
         fitness_value_ = fitness_value;
     }
 

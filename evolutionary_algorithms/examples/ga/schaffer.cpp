@@ -20,7 +20,7 @@ class SchafferFunction : public evo_alg::FitnessFunction<double> {
         return new SchafferFunction(*this);
     }
 
-    fitness_t operator()(evo_alg::Genotype<double> const& genotype) override {
+    FitnessValue operator()(evo_alg::Genotype<double> const& genotype) override {
         vector<double> chromosome = genotype.getChromosome();
         double x1 = chromosome[0], x2 = chromosome[1];
         double result = 0.5 + (pow(sin(x1 * x1 - x2 * x2), 2) - 0.5) / pow(1 + 0.001 * (x1 * x1 + x2 * x2), 2);

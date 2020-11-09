@@ -11,7 +11,7 @@ class SimpleFitness : public FitnessFunction<int> {
   public:
     SimpleFitness(std::vector<std::pair<int, int>> bounds) : FitnessFunction<int>{bounds} {};
 
-    virtual fitness_t operator()(Genotype<int> const& genotype) override {
+    virtual FitnessValue operator()(Genotype<int> const& genotype) override {
         std::vector<int> v = genotype.getChromosome();
 
         return {std::accumulate(v.begin(), v.end(), 0.0)};
