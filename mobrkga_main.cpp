@@ -253,18 +253,18 @@ int main(int argc, char** argv) {
         vector<double> coded_chromosome;
         for (size_t res_index = 0; res_index < residue_num; ++res_index) {
             size_t chromosome_res_idx = residue_indexes[res_index];
-            double coded_phi = trunc((chromosome[chromosome_res_idx] + 180) / 360 * 1e5);
-            double coded_psi = trunc((chromosome[chromosome_res_idx + 1] + 180) / 360 * 1e5);
-            double coded_omega = trunc((chromosome[chromosome_res_idx + 2] + 180) / 360 * 1e5);
+            double coded_phi = trunc((chromosome[chromosome_res_idx] + 180) / 360 * 1e7);
+            double coded_psi = trunc((chromosome[chromosome_res_idx + 1] + 180) / 360 * 1e7);
 
-            double wtf = (coded_phi * 1e10 + coded_psi * 1e5 + coded_omega) / 1e15;
+            double coded_residue = (coded_phi * 1e7 + coded_psi) / 1e14;
 
-            coded_chromosome.push_back(wtf);
+            coded_chromosome.push_back(coded_residue);
         }
 
         vector<double> chromosome_2 = residueDecoder(coded_chromosome);
         for (size_t index = 0; index < chromosome.size(); ++index) {
-            if (!evo_alg::utils::numericEqual(chromosome[index], chromosome_2[index], 1e-2)) {
+            if (angle_types[index] != angle_type::omega &&
+                !evo_alg::utils::numericEqual(chromosome[index], chromosome_2[index], 1e-2)) {
                 double gene_1 = chromosome[index];
                 double gene_2 = chromosome_2[index];
                 if (gene_1 < 0 && gene_2 > 0) {

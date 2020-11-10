@@ -63,15 +63,14 @@ vector<double> residueDecoder(vector<double> const& encoded_chromosome) {
     vector<double> decoded_chromosome;
     for (size_t res_index = 0; res_index < residue_indexes.size(); ++res_index) {
         double gene = encoded_chromosome[res_index];
-        double phi = trunc(gene * 1e5) / 1e5;
-        gene = (gene * 1e5 - trunc(gene * 1e5));
-        double psi = trunc(gene * 1e5) / 1e5;
-        gene = (gene * 1e5 - trunc(gene * 1e5));
-        double omega = trunc(gene * 1e5) / 1e5;
+        double phi = trunc(gene * 1e7) / 1e7;
+        gene = (gene * 1e7 - trunc(gene * 1e7));
+        double psi = trunc(gene * 1e7) / 1e7;
+        gene = (gene * 1e7 - trunc(gene * 1e7));
 
         decoded_chromosome.push_back(-180 + phi * 360);
         decoded_chromosome.push_back(-180 + psi * 360);
-        decoded_chromosome.push_back(-180 + omega * 360);
+        decoded_chromosome.push_back(180);
 
         for (size_t chi_idx = 0; chi_idx < residue_chi_num[res_index]; ++chi_idx)
             decoded_chromosome.push_back(0.0);

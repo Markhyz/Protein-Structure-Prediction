@@ -1,0 +1,251 @@
+INFO  : Centroids	 orgThresh = 0.219   
+INFO  : ======================================
+INFO  : Cluster  Centroid  ClutSize MeanRmsd  StdRmsd           CentDecoyName     
+INFO  :      1 :        9       48   7.7360   1.8748                  decoy_107.pdb 
+INFO  :      2 :       16       26   6.2081   3.5980                  decoy_113.pdb 
+INFO  :      3 :       39       20   4.0021   2.3426                  decoy_134.pdb 
+INFO  :      4 :      115       19  11.9691   3.7779                   decoy_22.pdb 
+INFO  :      5 :       41       16   6.7762   4.8075                  decoy_136.pdb 
+INFO  :      6 :       67       15  11.3718   4.8361                   decoy_16.pdb 
+INFO  :      7 :       28        9   4.1168   3.3808                  decoy_124.pdb 
+INFO  :      8 :       74        8   9.2429   5.7539                  decoy_166.pdb 
+INFO  :      9 :       66        8   2.2454   2.0395                  decoy_159.pdb 
+INFO  :     10 :      130        7   8.5327   5.1363                   decoy_36.pdb 
+INFO  :     11 :       56        7  14.0829   8.9470                   decoy_15.pdb 
+INFO  :     12 :        3        6   6.4539   4.5925                  decoy_101.pdb 
+INFO  :     13 :      104        6   2.8777   3.8868                  decoy_193.pdb 
+INFO  :     14 :      156        3   3.5965   4.7450                    decoy_6.pdb 
+INFO  :     15 :      105        2   0.0000   0.0000                  decoy_194.pdb 
+INFO  : ======================================
+INFO  : 15   Clusters; Assigned 200 / 200   Sum = 200
+INFO  : ======================================
+INFO  : ======================================
+INFO  :    Item     Cluster                     DecoyName  
+INFO  :      9 :        1                    decoy_107.pdb 
+INFO  :    181 :        1                     decoy_82.pdb 
+INFO  :     31 :        1                    decoy_127.pdb 
+INFO  :     51 :        1                    decoy_145.pdb 
+INFO  :    146 :        1                     decoy_50.pdb 
+INFO  :    110 :        1                    decoy_199.pdb 
+INFO  :     17 :        1                    decoy_114.pdb 
+INFO  :     20 :        1                    decoy_117.pdb 
+INFO  :     80 :        1                    decoy_171.pdb 
+INFO  :    171 :        1                     decoy_73.pdb 
+INFO  :    175 :        1                     decoy_77.pdb 
+INFO  :    186 :        1                     decoy_87.pdb 
+INFO  :     15 :        1                    decoy_112.pdb 
+INFO  :     10 :        1                    decoy_108.pdb 
+INFO  :    176 :        1                     decoy_78.pdb 
+INFO  :    157 :        1                     decoy_60.pdb 
+INFO  :    161 :        1                     decoy_64.pdb 
+INFO  :    147 :        1                     decoy_51.pdb 
+INFO  :     59 :        1                    decoy_152.pdb 
+INFO  :     73 :        1                    decoy_165.pdb 
+INFO  :    143 :        1                     decoy_48.pdb 
+INFO  :    166 :        1                     decoy_69.pdb 
+INFO  :     64 :        1                    decoy_157.pdb 
+INFO  :     72 :        1                    decoy_164.pdb 
+INFO  :    113 :        1                    decoy_200.pdb 
+INFO  :    168 :        1                     decoy_70.pdb 
+INFO  :    107 :        1                    decoy_196.pdb 
+INFO  :    169 :        1                     decoy_71.pdb 
+INFO  :    151 :        1                     decoy_55.pdb 
+INFO  :     88 :        1                    decoy_179.pdb 
+INFO  :    111 :        1                      decoy_2.pdb 
+INFO  :     90 :        1                    decoy_180.pdb 
+INFO  :    174 :        1                     decoy_76.pdb 
+INFO  :      6 :        1                    decoy_104.pdb 
+INFO  :     48 :        1                    decoy_142.pdb 
+INFO  :    142 :        1                     decoy_47.pdb 
+INFO  :     47 :        1                    decoy_141.pdb 
+INFO  :     36 :        1                    decoy_131.pdb 
+INFO  :    118 :        1                     decoy_25.pdb 
+INFO  :      4 :        1                    decoy_102.pdb 
+INFO  :    134 :        1                      decoy_4.pdb 
+INFO  :    189 :        1                      decoy_9.pdb 
+INFO  :     82 :        1                    decoy_173.pdb 
+INFO  :     91 :        1                    decoy_181.pdb 
+INFO  :    178 :        1                      decoy_8.pdb 
+INFO  :    109 :        1                    decoy_198.pdb 
+INFO  :    112 :        1                     decoy_20.pdb 
+INFO  :    188 :        1                     decoy_89.pdb 
+INFO  : ======================================
+INFO  :    Item     Cluster                     DecoyName  
+INFO  :     16 :        2                    decoy_113.pdb 
+INFO  :     50 :        2                    decoy_144.pdb 
+INFO  :    159 :        2                     decoy_62.pdb 
+INFO  :     71 :        2                    decoy_163.pdb 
+INFO  :    163 :        2                     decoy_66.pdb 
+INFO  :     84 :        2                    decoy_175.pdb 
+INFO  :     98 :        2                    decoy_188.pdb 
+INFO  :     40 :        2                    decoy_135.pdb 
+INFO  :     95 :        2                    decoy_185.pdb 
+INFO  :    123 :        2                      decoy_3.pdb 
+INFO  :     79 :        2                    decoy_170.pdb 
+INFO  :     19 :        2                    decoy_116.pdb 
+INFO  :     85 :        2                    decoy_176.pdb 
+INFO  :     13 :        2                    decoy_110.pdb 
+INFO  :     76 :        2                    decoy_168.pdb 
+INFO  :     69 :        2                    decoy_161.pdb 
+INFO  :    106 :        2                    decoy_195.pdb 
+INFO  :    195 :        2                     decoy_95.pdb 
+INFO  :      5 :        2                    decoy_103.pdb 
+INFO  :     34 :        2                     decoy_13.pdb 
+INFO  :    193 :        2                     decoy_93.pdb 
+INFO  :     63 :        2                    decoy_156.pdb 
+INFO  :    197 :        2                     decoy_97.pdb 
+INFO  :     11 :        2                    decoy_109.pdb 
+INFO  :     86 :        2                    decoy_177.pdb 
+INFO  :     42 :        2                    decoy_137.pdb 
+INFO  : ======================================
+INFO  :    Item     Cluster                     DecoyName  
+INFO  :     39 :        3                    decoy_134.pdb 
+INFO  :    149 :        3                     decoy_53.pdb 
+INFO  :     38 :        3                    decoy_133.pdb 
+INFO  :     83 :        3                    decoy_174.pdb 
+INFO  :    144 :        3                     decoy_49.pdb 
+INFO  :     21 :        3                    decoy_118.pdb 
+INFO  :     60 :        3                    decoy_153.pdb 
+INFO  :    133 :        3                     decoy_39.pdb 
+INFO  :     18 :        3                    decoy_115.pdb 
+INFO  :     27 :        3                    decoy_123.pdb 
+INFO  :     58 :        3                    decoy_151.pdb 
+INFO  :    135 :        3                     decoy_40.pdb 
+INFO  :     45 :        3                     decoy_14.pdb 
+INFO  :    140 :        3                     decoy_45.pdb 
+INFO  :     37 :        3                    decoy_132.pdb 
+INFO  :    108 :        3                    decoy_197.pdb 
+INFO  :     81 :        3                    decoy_172.pdb 
+INFO  :    170 :        3                     decoy_72.pdb 
+INFO  :     43 :        3                    decoy_138.pdb 
+INFO  :    129 :        3                     decoy_35.pdb 
+INFO  : ======================================
+INFO  :    Item     Cluster                     DecoyName  
+INFO  :    115 :        4                     decoy_22.pdb 
+INFO  :    103 :        4                    decoy_192.pdb 
+INFO  :    160 :        4                     decoy_63.pdb 
+INFO  :    182 :        4                     decoy_83.pdb 
+INFO  :    194 :        4                     decoy_94.pdb 
+INFO  :     22 :        4                    decoy_119.pdb 
+INFO  :    158 :        4                     decoy_61.pdb 
+INFO  :    162 :        4                     decoy_65.pdb 
+INFO  :     93 :        4                    decoy_183.pdb 
+INFO  :    196 :        4                     decoy_96.pdb 
+INFO  :     14 :        4                    decoy_111.pdb 
+INFO  :    102 :        4                    decoy_191.pdb 
+INFO  :    120 :        4                     decoy_27.pdb 
+INFO  :    180 :        4                     decoy_81.pdb 
+INFO  :     62 :        4                    decoy_155.pdb 
+INFO  :     46 :        4                    decoy_140.pdb 
+INFO  :    172 :        4                     decoy_74.pdb 
+INFO  :      8 :        4                    decoy_106.pdb 
+INFO  :    132 :        4                     decoy_38.pdb 
+INFO  : ======================================
+INFO  :    Item     Cluster                     DecoyName  
+INFO  :     41 :        5                    decoy_136.pdb 
+INFO  :    190 :        5                     decoy_90.pdb 
+INFO  :     54 :        5                    decoy_148.pdb 
+INFO  :     97 :        5                    decoy_187.pdb 
+INFO  :    101 :        5                    decoy_190.pdb 
+INFO  :     78 :        5                     decoy_17.pdb 
+INFO  :    121 :        5                     decoy_28.pdb 
+INFO  :    199 :        5                     decoy_99.pdb 
+INFO  :     30 :        5                    decoy_126.pdb 
+INFO  :     49 :        5                    decoy_143.pdb 
+INFO  :    128 :        5                     decoy_34.pdb 
+INFO  :    185 :        5                     decoy_86.pdb 
+INFO  :    125 :        5                     decoy_31.pdb 
+INFO  :    150 :        5                     decoy_54.pdb 
+INFO  :    154 :        5                     decoy_58.pdb 
+INFO  :     70 :        5                    decoy_162.pdb 
+INFO  : ======================================
+INFO  :    Item     Cluster                     DecoyName  
+INFO  :     67 :        6                     decoy_16.pdb 
+INFO  :    145 :        6                      decoy_5.pdb 
+INFO  :     33 :        6                    decoy_129.pdb 
+INFO  :    116 :        6                     decoy_23.pdb 
+INFO  :     53 :        6                    decoy_147.pdb 
+INFO  :     89 :        6                     decoy_18.pdb 
+INFO  :    164 :        6                     decoy_67.pdb 
+INFO  :     25 :        6                    decoy_121.pdb 
+INFO  :     24 :        6                    decoy_120.pdb 
+INFO  :    141 :        6                     decoy_46.pdb 
+INFO  :    114 :        6                     decoy_21.pdb 
+INFO  :     32 :        6                    decoy_128.pdb 
+INFO  :    131 :        6                     decoy_37.pdb 
+INFO  :     65 :        6                    decoy_158.pdb 
+INFO  :    136 :        6                     decoy_41.pdb 
+INFO  : ======================================
+INFO  :    Item     Cluster                     DecoyName  
+INFO  :     28 :        7                    decoy_124.pdb 
+INFO  :    127 :        7                     decoy_33.pdb 
+INFO  :     29 :        7                    decoy_125.pdb 
+INFO  :    173 :        7                     decoy_75.pdb 
+INFO  :    155 :        7                     decoy_59.pdb 
+INFO  :    167 :        7                      decoy_7.pdb 
+INFO  :      0 :        7                      decoy_1.pdb 
+INFO  :     12 :        7                     decoy_11.pdb 
+INFO  :    138 :        7                     decoy_43.pdb 
+INFO  : ======================================
+INFO  :    Item     Cluster                     DecoyName  
+INFO  :     74 :        8                    decoy_166.pdb 
+INFO  :    179 :        8                     decoy_80.pdb 
+INFO  :     94 :        8                    decoy_184.pdb 
+INFO  :     35 :        8                    decoy_130.pdb 
+INFO  :      1 :        8                     decoy_10.pdb 
+INFO  :      7 :        8                    decoy_105.pdb 
+INFO  :     26 :        8                    decoy_122.pdb 
+INFO  :    187 :        8                     decoy_88.pdb 
+INFO  : ======================================
+INFO  :    Item     Cluster                     DecoyName  
+INFO  :     66 :        9                    decoy_159.pdb 
+INFO  :     57 :        9                    decoy_150.pdb 
+INFO  :     77 :        9                    decoy_169.pdb 
+INFO  :     61 :        9                    decoy_154.pdb 
+INFO  :     87 :        9                    decoy_178.pdb 
+INFO  :    177 :        9                     decoy_79.pdb 
+INFO  :    198 :        9                     decoy_98.pdb 
+INFO  :     44 :        9                    decoy_139.pdb 
+INFO  : ======================================
+INFO  :    Item     Cluster                     DecoyName  
+INFO  :    130 :       10                     decoy_36.pdb 
+INFO  :    124 :       10                     decoy_30.pdb 
+INFO  :    153 :       10                     decoy_57.pdb 
+INFO  :     55 :       10                    decoy_149.pdb 
+INFO  :     96 :       10                    decoy_186.pdb 
+INFO  :     23 :       10                     decoy_12.pdb 
+INFO  :    100 :       10                     decoy_19.pdb 
+INFO  : ======================================
+INFO  :    Item     Cluster                     DecoyName  
+INFO  :     56 :       11                     decoy_15.pdb 
+INFO  :    119 :       11                     decoy_26.pdb 
+INFO  :      2 :       11                    decoy_100.pdb 
+INFO  :    192 :       11                     decoy_92.pdb 
+INFO  :    152 :       11                     decoy_56.pdb 
+INFO  :     92 :       11                    decoy_182.pdb 
+INFO  :    191 :       11                     decoy_91.pdb 
+INFO  : ======================================
+INFO  :    Item     Cluster                     DecoyName  
+INFO  :      3 :       12                    decoy_101.pdb 
+INFO  :     52 :       12                    decoy_146.pdb 
+INFO  :     99 :       12                    decoy_189.pdb 
+INFO  :    137 :       12                     decoy_42.pdb 
+INFO  :    122 :       12                     decoy_29.pdb 
+INFO  :     68 :       12                    decoy_160.pdb 
+INFO  : ======================================
+INFO  :    Item     Cluster                     DecoyName  
+INFO  :    104 :       13                    decoy_193.pdb 
+INFO  :    184 :       13                     decoy_85.pdb 
+INFO  :     75 :       13                    decoy_167.pdb 
+INFO  :    126 :       13                     decoy_32.pdb 
+INFO  :    165 :       13                     decoy_68.pdb 
+INFO  :    139 :       13                     decoy_44.pdb 
+INFO  : ======================================
+INFO  :    Item     Cluster                     DecoyName  
+INFO  :    156 :       14                      decoy_6.pdb 
+INFO  :    148 :       14                     decoy_52.pdb 
+INFO  :    117 :       14                     decoy_24.pdb 
+INFO  : ======================================
+INFO  :    Item     Cluster                     DecoyName  
+INFO  :    105 :       15                    decoy_194.pdb 
+INFO  :    183 :       15                     decoy_84.pdb 
