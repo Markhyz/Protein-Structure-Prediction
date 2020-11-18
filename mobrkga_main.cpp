@@ -69,15 +69,16 @@ class RosettaCentroidEnergyMOFunction : public evo_alg::FitnessFunction<double> 
     core::scoring::ScoreFunctionOP energy_score_;
 };
 
-// argv -> 1: protein name | 2: result score directory | 3: result decoy directory
+// argv -> 1: protein name | 2: offset | 3: result score directory | 4: result decoy directory
 int main(int argc, char** argv) {
-    ofstream ca_rmsd_out(argc > 2 ? string(argv[2]) + string("ca_rmsd") : "ca_rmsd", ios::app);
-    ofstream aa_rmsd_out(argc > 2 ? string(argv[2]) + string("aa_rmsd") : "aa_rmsd", ios::app);
-    ofstream gdttm_out(argc > 2 ? string(argv[2]) + string("gdttm") : "gdttm", ios::app);
+    ofstream ca_rmsd_out(argc > 3 ? string(argv[3]) + string("ca_rmsd") : "ca_rmsd", ios::app);
+    ofstream aa_rmsd_out(argc > 3 ? string(argv[3]) + string("aa_rmsd") : "aa_rmsd", ios::app);
+    ofstream gdttm_out(argc > 3 ? string(argv[3]) + string("gdttm") : "gdttm", ios::app);
 
     char* argv2[] = {argv[0]};
     core::init::init(1, argv2);
     string protein_name = argv[1];
+    size_t pose_start = argc > 2 ? stoi(argv[2]) : 1;
 
     ifstream fasta_in("proteins/" + protein_name + "/fasta");
 
@@ -253,18 +254,18 @@ int main(int argc, char** argv) {
         vector<double> coded_chromosome;
         for (size_t res_index = 0; res_index < residue_num; ++res_index) {
             size_t chromosome_res_idx = residue_indexes[res_index];
-            double coded_phi = trunc((chromosome[chromosome_res_idx] + 180) / 360 * 1e5);
-            double coded_psi = trunc((chromosome[chromosome_res_idx + 1] + 180) / 360 * 1e5);
-            double coded_omega = trunc((chromosome[chromosome_res_idx + 2] + 180) / 360 * 1e5);
+            double coded_phi = trunc((chromosome[chromosome_res_idx] + 180) / 360 * 1e7);
+            double coded_psi = trunc((chromosome[chromosome_res_idx + 1] + 180) / 360 * 1e7);
 
-            double wtf = (coded_phi * 1e10 + coded_psi * 1e5 + coded_omega) / 1e15;
+            double coded_residue = (coded_phi * 1e7 + coded_psi) / 1e14;
 
-            coded_chromosome.push_back(wtf);
+            coded_chromosome.push_back(coded_residue);
         }
 
         vector<double> chromosome_2 = residueDecoder(coded_chromosome);
         for (size_t index = 0; index < chromosome.size(); ++index) {
-            if (!evo_alg::utils::numericEqual(chromosome[index], chromosome_2[index], 1e-2)) {
+            if (angle_types[index] != angle_type::omega &&
+                !evo_alg::utils::numericEqual(chromosome[index], chromosome_2[index], 1e-2)) {
                 double gene_1 = chromosome[index];
                 double gene_2 = chromosome_2[index];
                 if (gene_1 < 0 && gene_2 > 0) {
@@ -401,7 +402,7 @@ int main(int argc, char** argv) {
         frontier_info << "SS: " << scores[1] << " / " << scores[2] << endl;
         frontier_info << "CM: " << scores[3] << " / " << scores[4] << endl << endl;
 
-        faPose.dump_pdb(string(argc > 3 ? argv[3] : "") + string("decoy_") + to_string(ind_index + 1) + string(".pdb"));
+        faPose.dump_pdb(string(argc > 4 ? argv[4] : "") + string("decoy_") + to_string(ind_index + 1) + string(".pdb"));
 
         if (gdt > best_gdt) {
             best_gdt = gdt;
