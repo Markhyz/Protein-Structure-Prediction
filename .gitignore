@@ -2,3 +2,11 @@
 **/build/*
 external/**/*
 results
+decoy.log
+*.fit
+*.diver
+*.pdb
+*.info
+aa_rmsd
+ca_rmsd
+gdttm

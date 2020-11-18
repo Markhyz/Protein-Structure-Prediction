@@ -69,15 +69,16 @@ class RosettaCentroidEnergyMOFunction : public evo_alg::FitnessFunction<double> 
     core::scoring::ScoreFunctionOP energy_score_;
 };
 
-// argv -> 1: protein name | 2: result score directory | 3: result decoy directory
+// argv -> 1: protein name | 2: offset | 3: result score directory | 4: result decoy directory
 int main(int argc, char** argv) {
-    ofstream ca_rmsd_out(argc > 2 ? string(argv[2]) + string("ca_rmsd") : "ca_rmsd", ios::app);
-    ofstream aa_rmsd_out(argc > 2 ? string(argv[2]) + string("aa_rmsd") : "aa_rmsd", ios::app);
-    ofstream gdttm_out(argc > 2 ? string(argv[2]) + string("gdttm") : "gdttm", ios::app);
+    ofstream ca_rmsd_out(argc > 3 ? string(argv[3]) + string("ca_rmsd") : "ca_rmsd", ios::app);
+    ofstream aa_rmsd_out(argc > 3 ? string(argv[3]) + string("aa_rmsd") : "aa_rmsd", ios::app);
+    ofstream gdttm_out(argc > 3 ? string(argv[3]) + string("gdttm") : "gdttm", ios::app);
 
     char* argv2[] = {argv[0]};
     core::init::init(1, argv2);
     string protein_name = argv[1];
+    size_t pose_start = argc > 2 ? stoi(argv[2]) : 1;
 
     ifstream fasta_in("proteins/" + protein_name + "/fasta");
 
@@ -401,7 +402,7 @@ int main(int argc, char** argv) {
         frontier_info << "SS: " << scores[1] << " / " << scores[2] << endl;
         frontier_info << "CM: " << scores[3] << " / " << scores[4] << endl << endl;
 
-        faPose.dump_pdb(string(argc > 3 ? argv[3] : "") + string("decoy_") + to_string(ind_index + 1) + string(".pdb"));
+        faPose.dump_pdb(string(argc > 4 ? argv[4] : "") + string("decoy_") + to_string(ind_index + 1) + string(".pdb"));
 
         if (gdt > best_gdt) {
             best_gdt = gdt;
