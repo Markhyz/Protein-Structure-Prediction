@@ -18,6 +18,7 @@ target_compile_features(brkga_main PUBLIC cxx_std_17)
 add_executable(mobrkga_main mobrkga_main.cpp)
 target_link_libraries(mobrkga_main PRIVATE rosetta evo_alg)
 target_compile_features(mobrkga_main PUBLIC cxx_std_17)
+target_compile_options(ga_main PRIVATE -g)
 
 add_executable(score_calc score_calc.cpp)
 target_link_libraries(score_calc PRIVATE rosetta)

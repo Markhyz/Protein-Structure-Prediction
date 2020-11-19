@@ -9,4 +9,7 @@ decoy.log
 *.info
 aa_rmsd
 ca_rmsd
+mean_rmsd
 gdttm
+mean_gdt
+ROSETTA_CRASH.log

@@ -1,11 +1,3 @@
-PFRMAT RR
-TARGET 596003
-AUTHOR RaptorX
-METHOD deep dilated convolutional residual neural networks by Jinbo Xu (jinboxu@gmail.com)
-RMODE 1
-REMARK format is explained at https://predictioncenter.org/casp14/index.cgi?page=format#RR
-REMARK SEQ KLPPGWEKRMSRSSGRVYYFNHITNASQWERPSGNSSSG
-MODEL 1
 8 17 0.393
 10 17 0.326
 7 22 0.249
@@ -567,4 +559,3 @@ MODEL 1
 13 25 0.001
 14 23 0.001
 13 19 0.001
-END

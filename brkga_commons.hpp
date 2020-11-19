@@ -66,7 +66,6 @@ vector<double> residueDecoder(vector<double> const& encoded_chromosome) {
         double phi = trunc(gene * 1e7) / 1e7;
         gene = (gene * 1e7 - trunc(gene * 1e7));
         double psi = trunc(gene * 1e7) / 1e7;
-        gene = (gene * 1e7 - trunc(gene * 1e7));
 
         decoded_chromosome.push_back(-180 + phi * 360);
         decoded_chromosome.push_back(-180 + psi * 360);
