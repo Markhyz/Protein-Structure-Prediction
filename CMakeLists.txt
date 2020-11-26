@@ -24,6 +24,10 @@ add_executable(score_calc score_calc.cpp)
 target_link_libraries(score_calc PRIVATE rosetta)
 target_compile_features(score_calc PUBLIC cxx_std_17)
 
+add_executable(population_score population_score.cpp)
+target_link_libraries(population_score PRIVATE rosetta)
+target_compile_features(population_score PUBLIC cxx_std_17)
+
 if (MPI)
     find_package(MPI REQUIRED)
     message(STATUS "Run: ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} EXECUTABLE ${MPIEXEC_POSTFLAGS} ARGS")
