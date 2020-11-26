@@ -12,4 +12,4 @@ ca_rmsd
 mean_rmsd
 gdttm
 mean_gdt
-ROSETTA_CRASH.log
+*.log
