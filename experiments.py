@@ -14,8 +14,8 @@ def stats(values):
     return (mean(values), stdev(values))
 
 for protein in protein_list:
-    ca_rmsd      = read_file(f"results/{protein}/best_ca_rmsd")
-    ca_gdt       = read_file(f"results/{protein}/best_ca_gdt")
+    ca_rmsd      = read_file(f"results/{protein}/best_ca_rmsd2")
+    ca_gdt       = read_file(f"results/{protein}/best_ca_gdt2")
 
     mean_rmsd    = read_file(f"results/{protein}/mean_rmsd")
     mean_gdt     = read_file(f"results/{protein}/mean_gdt")

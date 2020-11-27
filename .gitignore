@@ -13,3 +13,4 @@ mean_rmsd
 gdttm
 mean_gdt
 *.log
+*.png
