@@ -3,6 +3,8 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <omp.h>
+#include <numeric>
 
 using namespace std;
 
@@ -21,9 +23,12 @@ int main(int argc, char** argv) {
 
     core::pose::Pose native_structure;
     core::import_pose::pose_from_file(native_structure, native_structure_path, false, core::import_pose::PDB_file);
-
+	
+    vector<double> rmsds(num_decoys), gdts(num_decoys);
     double best_rmsd = 1e9, mean_rmsd = 0, mean_gdt = 0, best_gdt = 0;
+    int best_structure = -1;
 
+    #pragma omp parallel for schedule(dynamic)
     for (int i = 1; i <= num_decoys; ++i) {
         core::pose::Pose structure;
         core::import_pose::pose_from_file(structure, structure_dir + string("/decoy_") + to_string(i) + string(".pdb"),
@@ -36,20 +41,23 @@ int main(int argc, char** argv) {
         double rmsd = core::scoring::CA_rmsd(structure, native_structure);
         double gdt = core::scoring::CA_gdtmm(structure, native_structure);
 
-        if (rmsd < best_rmsd) {
-            best_rmsd = rmsd;
-        }
-
-        if (gdt > best_gdt) {
-            best_gdt = gdt;
-        }
-
-        mean_rmsd += rmsd;
-        mean_gdt += gdt;
+        rmsds[i - 1] = rmsd;
+        gdts[i - 1] = gdt;
     }
 
-    mean_rmsd /= num_decoys;
-    mean_gdt /= num_decoys;
+    mean_rmsd = accumulate(rmsds.begin(), rmsds.end(), 0.0) / num_decoys;
+    mean_gdt = accumulate(gdts.begin(), gdts.end(), 0.0) / num_decoys;
+
+    for (int i = 0; i < num_decoys; ++i) {
+	if (rmsds[i] < best_rmsd) {
+	    best_rmsd = rmsds[i];
+	    best_structure = i;
+	}
+
+	if (gdts[i] > best_gdt) {
+            best_gdt = gdts[i];
+	}
+    }
 
     if (type == "rmsd") {
         printf("%.9f\n", best_rmsd);
@@ -65,6 +73,20 @@ int main(int argc, char** argv) {
 
     if (type == "mean_gdt") {
         printf("%.9f\n", mean_gdt);
+    }
+
+    if (type == "pdb_rmsd") {
+	 core::pose::Pose structure;
+         core::import_pose::pose_from_file(structure, structure_dir + string("/decoy_") + to_string(best_structure + 1) + string(".pdb"),
+                                           false, core::import_pose::PDB_file);
+
+         if (pose_start - 1 > 0) {
+            structure.delete_residue_range_slow(1, pose_start - 1);
+         }
+
+	 structure.dump_pdb("best_structure.pdb");
+
+	 printf("%.9f\n", best_rmsd);
     }
 
     cout.rdbuf(coutbuf);
