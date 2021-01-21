@@ -134,7 +134,10 @@ void getContactMap(string protein_name) {
     vector<pair<double, int>> contact_prob;
 
     size_t idx = 0;
-    while (cm_in >> i >> j >> prob) {
+    string line;
+    while (getline(cm_in, line)) {
+        istringstream iss(line);
+        iss >> i >> j >> prob;
         res_pairs.push_back({i, j});
         contact_prob.push_back({prob, idx++});
     }
