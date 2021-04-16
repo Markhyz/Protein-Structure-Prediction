@@ -1,6 +1,7 @@
 #!/bin/bash
 
-proteins=(1vii  1gb1  1hhp  1i6c  1crn  2imu  T0868  T0900)
+#proteins=(1vii  1gb1  1hhp  1i6c  1crn  2imu  T0868  T0900)
+proteins=(1acw  1ail  1crn  1enh  1rop  1zdd  2mr9  2p81)
 
 for protein in ${proteins[@]};
 do
@@ -10,5 +11,5 @@ do
 	    args+="$protein $i "
     done
 
-    echo $args | xargs -n 2 -P 32 ./rosetta_abinitio.sh
+    echo $args | xargs -n 2 -P 32 ./scripts/rosetta_abinitio.sh
 done

@@ -134,11 +134,15 @@ int main(int argc, char** argv) {
     core::scoring::sasa::SasaCalc sasa_calc;
 
     core::scoring::dssp::Dssp dssp_native(native_structure);
-
+	cout << "lol" << endl;
     getSS(protein_name);
+    cout << "lel" << endl;
     getFragments(protein_name, 3, frag3, frag3_prob);
+
     getFragments(protein_name, 9, frag9, frag9_prob);
+    cout << "lul" << endl;
     getContactMap(protein_name);
+    cout << "lmao" << endl;
 
     evo_alg::FitnessFunction<double>::shared_ptr fit_centroid(RosettaCentroidEnergyMOFunction::create(sequence));
     core::scoring::ScoreFunctionOP energy_score_centroid =
@@ -164,8 +168,8 @@ int main(int argc, char** argv) {
     size_t frag9_chromosome_size = ceil(residue_indexes.size() / 9.0);
     size_t residue_chromosome_size = residue_indexes.size();
 
-    size_t iteration_num = 500;
-    size_t pop_size = 50;
+    size_t iteration_num = 1000;
+    size_t pop_size = 500;
     double elite_x = 0.5;
     double mut_x = 0.2;
     double cr_x = 0.55;

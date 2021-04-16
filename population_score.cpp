@@ -38,7 +38,12 @@ int main(int argc, char** argv) {
             structure.delete_residue_range_slow(1, pose_start - 1);
         }
 
-        double rmsd = core::scoring::CA_rmsd(structure, native_structure);
+	if (structure.total_residue() > native_structure.total_residue()) {
+            structure.delete_residue_range_slow(native_structure.total_residue() + 1, structure.total_residue());
+	    assert(structure.total_residue() == native_structure.total_residue());
+	}
+
+	double rmsd = core::scoring::CA_rmsd(structure, native_structure);
         double gdt = core::scoring::CA_gdtmm(structure, native_structure);
 
         rmsds[i - 1] = rmsd;
