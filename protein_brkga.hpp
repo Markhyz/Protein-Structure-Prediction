@@ -1,7 +1,7 @@
 #ifndef GUARD_H_BRKGA_COMMONS
 #define GUARD_H_BRKGA_COMMONS
 
-#include "protein_commons.hpp"
+#include "protein_utils.hpp"
 
 #include <evo_alg/algorithms/brkga.hpp>
 
