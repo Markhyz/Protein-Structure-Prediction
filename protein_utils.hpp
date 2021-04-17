@@ -2,16 +2,13 @@
 #define GUARD_H_PROTEIN_COMMONS
 
 #include "rosetta.hpp"
+#include "utils.hpp"
 
 #include <evo_alg/core.hpp>
 #include <evo_alg/operators.hpp>
 
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <memory>
-
-using namespace std;
+#include <iomanip>
 
 namespace angle_type {
     constexpr uint8_t phi = 1;
@@ -37,8 +34,8 @@ vector<tuple<size_t, size_t, double>> cm;
 double max_energy = 0;
 double max_energy_fa = 0;
 
-void getSS(string protein_name) {
-    ifstream ss_in("proteins/" + protein_name + "/ss2");
+void getSS(string ss_path) {
+    ifstream ss_in(ss_path);
     string line;
 
     getline(ss_in, line);
@@ -74,9 +71,9 @@ double fix_angle(double angle) {
     return angle + (angle < -180 ? 360 : (angle > 180 ? -360 : 0));
 }
 
-void getFragments(string protein_name, size_t frag_size, frag_list_t& frag_list,
+void getFragments(string frag_path, size_t frag_size, frag_list_t& frag_list,
                   vector<vector<double>>& frag_prob_list) {
-    ifstream frag_in("proteins/" + protein_name + "/frag" + to_string(frag_size));
+    ifstream frag_in(frag_path);
 
     string _, line;
     size_t pos, n;
@@ -124,8 +121,8 @@ void getFragments(string protein_name, size_t frag_size, frag_list_t& frag_list,
     }
 }
 
-void getContactMap(string protein_name) {
-    ifstream cm_in("proteins/" + protein_name + "/con");
+void getContactMap(string cm_path) {
+    ifstream cm_in(cm_path);
 
     size_t i, j;
     double lb, ub_, prob;

@@ -1,19 +1,28 @@
 #include "protein_brkga.hpp"
 
-// argv -> 1: protein name | 2: offset | 3: result score directory | 4: result decoy directory
 int main(int argc, char** argv) {
-    ofstream ca_rmsd_out(argc > 3 ? string(argv[3]) + string("ca_rmsd") : "ca_rmsd", ios::app);
-    ofstream aa_rmsd_out(argc > 3 ? string(argv[3]) + string("aa_rmsd") : "aa_rmsd", ios::app);
-    ofstream gdttm_out(argc > 3 ? string(argv[3]) + string("gdttm") : "gdttm", ios::app);
-    ofstream mean_rmsd_out(argc > 3 ? string(argv[3]) + string("mean_rmsd") : "mean_rmsd", ios::app);
-    ofstream mean_gdt_out(argc > 3 ? string(argv[3]) + string("mean_gdt") : "mean_gdt", ios::app);
+    if (argc < 2) {
+        cout << "./mobrkga_pred CONFIG_FILE" << endl;
+
+        return EXIT_FAILURE;
+    }
+
+    string config_file_name = argv[1];
+    config_t config;
+
+    setConfig(config_file_name, config);
+
+    ofstream ca_rmsd_out(config.score_output_dir + config.name + string(".ca_rmsd"));
+    ofstream aa_rmsd_out(config.score_output_dir + config.name + string(".aa_rmsd"));
+    ofstream gdttm_out(config.score_output_dir + config.name + string(".gdttm"));
+    ofstream mean_rmsd_out(config.score_output_dir + config.name + string(".mean_rmsd"));
+    ofstream mean_gdt_out(config.score_output_dir + config.name + string(".mean_gdt"));
 
     char* argv2[] = {argv[0]};
     core::init::init(1, argv2);
-    string protein_name = argv[1];
-    size_t pose_start = argc > 2 ? stoi(argv[2]) : 1;
+    size_t pose_start = config.pose_start;
 
-    ifstream fasta_in("proteins/" + protein_name + "/fasta");
+    ifstream fasta_in(config.protein_fasta_path);
 
     string protein_desc, sequence;
     getline(fasta_in, protein_desc);
@@ -54,26 +63,21 @@ int main(int argc, char** argv) {
     }
 
     core::pose::Pose native_structure;
-    core::import_pose::pose_from_file(native_structure, "proteins/" + protein_name + "/pdb", false,
+    core::import_pose::pose_from_file(native_structure, config.protein_pdb_path, false,
                                       core::import_pose::PDB_file);
 
     core::pose::Pose native_structure2;
-    core::import_pose::pose_from_file(native_structure2, "proteins/" + protein_name + "/pdb", false,
+    core::import_pose::pose_from_file(native_structure2, config.protein_pdb_path, false,
                                       core::import_pose::PDB_file);
     core::util::switch_to_residue_type_set(native_structure2, core::chemical::CENTROID);
 
     core::scoring::sasa::SasaCalc sasa_calc;
 
     core::scoring::dssp::Dssp dssp_native(native_structure);
-	cout << "lol" << endl;
-    getSS(protein_name);
-    cout << "lel" << endl;
-    getFragments(protein_name, 3, frag3, frag3_prob);
-
-    getFragments(protein_name, 9, frag9, frag9_prob);
-    cout << "lul" << endl;
-    getContactMap(protein_name);
-    cout << "lmao" << endl;
+    getSS(config.protein_ss_path);
+    getFragments(config.protein_frag3_path, 3, frag3, frag3_prob);
+    getFragments(config.protein_frag9_path, 9, frag9, frag9_prob);
+    getContactMap(config.protein_cm_path);
 
     evo_alg::FitnessFunction<double>::shared_ptr fit_centroid(RosettaCentroidEnergyMOFunction::create(sequence));
     core::scoring::ScoreFunctionOP energy_score_centroid =
@@ -99,13 +103,13 @@ int main(int argc, char** argv) {
     size_t frag9_chromosome_size = ceil(residue_indexes.size() / 9.0);
     size_t residue_chromosome_size = residue_indexes.size();
 
-    size_t iteration_num = 1000;
-    size_t pop_size = 500;
-    double elite_x = 0.5;
-    double mut_x = 0.2;
-    double cr_x = 0.55;
-    double diversity_threshold = 0.2;
-    double diversity_enforcement = 0.5;
+    size_t iteration_num = config.iteration_num;
+    size_t pop_size = config.population_size;
+    double elite_x = config.elite_fraction;
+    double mut_x = config.mutant_fraction;
+    double cr_x = config.crossover_prob;
+    double diversity_threshold = config.diversity_threshold;
+    double diversity_enforcement = config.diversity_enforcement;
 
     auto update_fn = [&](evo_alg::brkga::config_t<evo_alg::FitnessFunction<double>>& config, size_t it) {
         if (it > iteration_num / 2) {
@@ -386,7 +390,7 @@ int main(int argc, char** argv) {
             frontier_info << "CM: " << scores[3] << " / " << scores[4] << endl << endl;
         }
 
-        faPose.dump_pdb(string(argc > 4 ? argv[4] : "") + string("decoy_") + to_string(ind_index + 1) + string(".pdb"));
+        faPose.dump_pdb(config.decoy_output_dir + string("decoy_") + to_string(ind_index + 1) + string(".pdb"));
 
         mean_gdt += gdt;
         mean_rmsd += rmsd;
@@ -463,40 +467,40 @@ int main(int argc, char** argv) {
     cout << "SS:     " << ss.substr(pose_start - 1) << endl;
     cout << "Found:  " << dssp2.get_dssp_secstruct() << endl << endl;
 
-    // if (pose_start - 1 > 0) {
-    //     core::pose::make_pose_from_sequence(
-    //         faPose, sequence,
-    //         *(core::chemical::ChemicalManager::get_instance()->residue_type_set(core::chemical::FA_STANDARD)));
-    //     for (size_t residue_idx = 1; residue_idx <= residue_num; ++residue_idx) {
-    //         size_t chromosome_res_idx = residue_indexes[residue_idx - 1];
-    //         pose.set_phi(residue_idx, chromosome_post[chromosome_res_idx]);
-    //         pose.set_psi(residue_idx, chromosome_post[chromosome_res_idx + 1]);
-    //         pose.set_omega(residue_idx, chromosome_post[chromosome_res_idx + 2]);
+    if (pose_start - 1 > 0) {
+        core::pose::make_pose_from_sequence(
+            faPose, sequence,
+            *(core::chemical::ChemicalManager::get_instance()->residue_type_set(core::chemical::FA_STANDARD)));
+        for (size_t residue_idx = 1; residue_idx <= residue_num; ++residue_idx) {
+            size_t chromosome_res_idx = residue_indexes[residue_idx - 1];
+            pose.set_phi(residue_idx, chromosome_post[chromosome_res_idx]);
+            pose.set_psi(residue_idx, chromosome_post[chromosome_res_idx + 1]);
+            pose.set_omega(residue_idx, chromosome_post[chromosome_res_idx + 2]);
 
-    //         faPose.set_phi(residue_idx, chromosome_post[chromosome_res_idx]);
-    //         faPose.set_psi(residue_idx, chromosome_post[chromosome_res_idx + 1]);
-    //         faPose.set_omega(residue_idx, chromosome_post[chromosome_res_idx + 2]);
+            faPose.set_phi(residue_idx, chromosome_post[chromosome_res_idx]);
+            faPose.set_psi(residue_idx, chromosome_post[chromosome_res_idx + 1]);
+            faPose.set_omega(residue_idx, chromosome_post[chromosome_res_idx + 2]);
 
-    //         for (size_t chi_idx = 0; chi_idx < residue_chi_num[residue_idx - 1]; ++chi_idx)
-    //             faPose.set_chi(chi_idx + 1, residue_idx, chromosome_post[chromosome_res_idx + 3 + chi_idx]);
-    //     }
-    // }
+            for (size_t chi_idx = 0; chi_idx < residue_chi_num[residue_idx - 1]; ++chi_idx)
+                faPose.set_chi(chi_idx + 1, residue_idx, chromosome_post[chromosome_res_idx + 3 + chi_idx]);
+        }
+    }
 
-    // repackProtein(faPose, energy_score_fa);
+    repackProtein(faPose, energy_score_fa);
 
-    // if (pose_start - 1 > 0) {
-    //     faPose.delete_residue_range_slow(1, pose_start - 1);
-    // }
+    if (pose_start - 1 > 0) {
+        faPose.delete_residue_range_slow(1, pose_start - 1);
+    }
 
-    // cout << "Full Atom energy: " << energy_score_fa->score(native_structure) << " " << energy_score_fa->score(faPose)
-    //      << endl
-    //      << endl;
+    cout << "Full Atom energy: " << energy_score_fa->score(native_structure) << " " << energy_score_fa->score(faPose)
+         << endl
+         << endl;
 
-    // cout << "RMSD: " << core::scoring::all_atom_rmsd(faPose, native_structure) << " "
-    //      << core::scoring::CA_rmsd(faPose, native_structure) << endl
-    //      << endl;
+    cout << "RMSD: " << core::scoring::all_atom_rmsd(faPose, native_structure) << " "
+         << core::scoring::CA_rmsd(faPose, native_structure) << endl
+         << endl;
 
-    // cout << "GDT-TM: " << core::scoring::CA_gdtmm(faPose, native_structure) << endl << endl;
+    cout << "GDT-TM: " << core::scoring::CA_gdtmm(faPose, native_structure) << endl << endl;
 
     cout << "Mean RMSD: " << mean_rmsd << endl;
     cout << "Mean GDT-TM: " << mean_gdt << endl << endl;
@@ -507,8 +511,6 @@ int main(int argc, char** argv) {
     gdttm_out << fixed;
     gdttm_out.precision(9);
     gdttm_out << core::scoring::CA_gdtmm(faPose, native_structure) << endl;
-
-    faPose.dump_pdb("res.pdb");
 
     if (faPose.total_residue() < residue_num) {
         core::pose::make_pose_from_sequence(
@@ -555,25 +557,25 @@ int main(int argc, char** argv) {
     mean_gdt_out.precision(9);
     mean_gdt_out << mean_gdt << endl;
 
-    for (size_t index = 0; index < 5; ++index) {
-        evo_alg::fitness::frontier_t cur_frontier =
-            best_frontiers[index ? (size_t)((index / 4.0) * best_frontiers.size()) - 1 : index];
-        ofstream fit_out(string("res_") + to_string(index) + string(".fit"));
-        fit_out << fixed;
-        fit_out.precision(9);
-        for (auto fit : cur_frontier) {
-            for (double fit_value : fit.getValues())
-                fit_out << fit_value << " ";
-            fit_out << endl;
-        }
-    }
+    // for (size_t index = 0; index < 5; ++index) {
+    //     evo_alg::fitness::frontier_t cur_frontier =
+    //         best_frontiers[index ? (size_t)((index / 4.0) * best_frontiers.size()) - 1 : index];
+    //     ofstream fit_out(string("res_") + to_string(index) + string(".fit"));
+    //     fit_out << fixed;
+    //     fit_out.precision(9);
+    //     for (auto fit : cur_frontier) {
+    //         for (double fit_value : fit.getValues())
+    //             fit_out << fit_value << " ";
+    //         fit_out << endl;
+    //     }
+    // }
 
-    ofstream diver_out("res.diver");
-    diver_out << fixed;
-    diver_out.precision(9);
-    for (size_t index = 0; index < diversity.size(); ++index) {
-        diver_out << index << " " << diversity[index] << endl;
-    }
+    // ofstream diver_out("res.diver");
+    // diver_out << fixed;
+    // diver_out.precision(9);
+    // for (size_t index = 0; index < diversity.size(); ++index) {
+    //     diver_out << index << " " << diversity[index] << endl;
+    // }
 
-    return 0;
+    return EXIT_SUCCESS;
 }

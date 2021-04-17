@@ -1,4 +1,4 @@
-#include "rosetta.hpp"
+#include "../rosetta.hpp"
 
 #include <fstream>
 #include <iomanip>
