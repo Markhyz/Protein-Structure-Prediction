@@ -261,8 +261,8 @@ namespace evo_alg {
         }
 
         template <class IndividualType, class FitnessType>
-        std::tuple<Population<IndividualType>, Population<IndividualType>, std::vector<fitness::frontier_t>,
-                   std::vector<double>>
+        std::tuple<Population<IndividualType>, Population<IndividualType>,
+                   std::vector<std::tuple<std::vector<std::vector<double>>, fitness::frontier_t>>, std::vector<double>>
         runMultiObjective(config_t<FitnessType> config) {
             size_t const iteration_num = config.iteration_num;
             size_t const pop_size = config.pop_size;
@@ -316,15 +316,17 @@ namespace evo_alg {
 
             updateArchive(population, archive, archive_current_size);
 
-            std::vector<fitness::frontier_t> best_frontiers;
+            std::vector<std::tuple<std::vector<std::vector<double>>, fitness::frontier_t>> best_frontiers;
             std::vector<double> diversity;
 
             std::vector<size_t> best_individuals_index = archive.getBestIndividuals();
             fitness::frontier_t best_frontier;
+            vector<vector<double>> best_individuals_chromosome;
             for (size_t ind : best_individuals_index) {
                 best_frontier.push_back(archive[ind].getFitnessValue());
+                best_individuals_chromosome.push_back(archive[ind].getChromosome());
             }
-            best_frontiers.push_back(best_frontier);
+            best_frontiers.emplace_back(best_individuals_chromosome, best_frontier);
             diversity.push_back(population.getPairwiseDiversity());
 
             for (size_t it = 0; it < iteration_num; ++it) {
@@ -404,10 +406,12 @@ namespace evo_alg {
 
                 best_individuals_index = archive.getBestIndividuals();
                 best_frontier.clear();
+                best_individuals_chromosome.clear();
                 for (size_t ind : best_individuals_index) {
                     best_frontier.push_back(archive[ind].getFitnessValue());
+                    best_individuals_chromosome.push_back(archive[ind].getChromosome());
                 }
-                best_frontiers.push_back(best_frontier);
+                best_frontiers.emplace_back(best_individuals_chromosome, best_frontier);
 
                 double const diver = population.getPairwiseDiversity(mut_size);
                 diversity.push_back(diver);

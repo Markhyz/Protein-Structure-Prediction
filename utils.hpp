@@ -6,7 +6,6 @@
 using namespace std;
 
 struct config_t {
-    string name;
     string protein_fasta_path;
     string protein_pdb_path;
     string protein_frag3_path;
@@ -15,7 +14,7 @@ struct config_t {
     string protein_cm_path;
     string score_output_dir;
     string decoy_output_dir;
-    string generation_output_dir;
+    string algorithm_output_dir;
 
     size_t iteration_num;
     size_t population_size;
@@ -41,15 +40,12 @@ void setConfigValue(config_t& config, map<string, string>& config_values, string
             exit(EXIT_FAILURE);
         }
     } else {
-        if (value_name == "name") {
-            config.name = value;
-
-        } else if (value_name == "fasta_path") {
+        if (value_name == "fasta_path") {
             config.protein_fasta_path = value;
 
         } else if (value_name == "pdb_path") {
             config.protein_pdb_path = value;
-            
+
         } else if (value_name == "frag3_path") {
             config.protein_frag3_path = value;
 
@@ -68,8 +64,8 @@ void setConfigValue(config_t& config, map<string, string>& config_values, string
         } else if (value_name == "decoy_output_dir") {
             config.decoy_output_dir = normalizeDirPath(value);
 
-        } else if (value_name == "generation_output_dir") {
-            config.generation_output_dir = normalizeDirPath(value);
+        } else if (value_name == "algorithm_output_dir") {
+            config.algorithm_output_dir = normalizeDirPath(value);
 
         } else if (value_name == "iterations") {
             config.iteration_num = stoul(value);
@@ -91,7 +87,7 @@ void setConfigValue(config_t& config, map<string, string>& config_values, string
 
         } else if (value_name == "diversity_enforcement") {
             config.diversity_enforcement = stod(value);
-            
+
         } else if (value_name == "protein_offset") {
             config.pose_start = stoul(value);
         }
@@ -122,7 +118,9 @@ void readConfigFile(string config_file_name, map<string, string>& config_values)
                 }
                 token = "";
                 break;
-            } else token += tolower(c);
+            } else {
+                token += tolower(c);
+            }
         }
         if (!token.empty()) {
             tokens.push_back(token);
@@ -143,7 +141,6 @@ void setConfig(string config_file_name, config_t& config) {
 
     readConfigFile(config_file_name, config_values);
 
-    setConfigValue(config, config_values, "name", true);
     setConfigValue(config, config_values, "fasta_path", true);
     setConfigValue(config, config_values, "pdb_path", true);
     setConfigValue(config, config_values, "frag3_path", true);
@@ -152,7 +149,7 @@ void setConfig(string config_file_name, config_t& config) {
     setConfigValue(config, config_values, "cm_path", true);
     setConfigValue(config, config_values, "score_output_dir", true);
     setConfigValue(config, config_values, "decoy_output_dir", true);
-    setConfigValue(config, config_values, "generation_output_dir", true);
+    setConfigValue(config, config_values, "algorithm_output_dir", true);
     setConfigValue(config, config_values, "iterations", true);
     setConfigValue(config, config_values, "population_size", true);
     setConfigValue(config, config_values, "elite_fraction", false);

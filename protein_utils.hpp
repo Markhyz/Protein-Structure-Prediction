@@ -7,8 +7,8 @@
 #include <evo_alg/core.hpp>
 #include <evo_alg/operators.hpp>
 
-#include <memory>
 #include <iomanip>
+#include <memory>
 
 namespace angle_type {
     constexpr uint8_t phi = 1;
@@ -71,8 +71,7 @@ double fix_angle(double angle) {
     return angle + (angle < -180 ? 360 : (angle > 180 ? -360 : 0));
 }
 
-void getFragments(string frag_path, size_t frag_size, frag_list_t& frag_list,
-                  vector<vector<double>>& frag_prob_list) {
+void getFragments(string frag_path, size_t frag_size, frag_list_t& frag_list, vector<vector<double>>& frag_prob_list) {
     ifstream frag_in(frag_path);
 
     string _, line;
