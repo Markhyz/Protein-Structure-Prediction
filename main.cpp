@@ -16,6 +16,8 @@ evo_alg::FitnessFunction<double>::shared_ptr fit_fa;
 core::scoring::ScoreFunctionOP energy_score_centroid;
 core::scoring::ScoreFunctionOP energy_score_fa;
 
+evo_alg::utils::Timer timer;
+
 void rosettaInit(char** rosetta_argv, config_t config) {
     core::init::init(1, rosetta_argv);
 
@@ -354,6 +356,9 @@ void outputAlgorithmResults(config_t config,
     for (size_t index = 0; index < diversity.size(); ++index) {
         diversity_out << index << " " << diversity[index] << endl;
     }
+
+    ofstream time_out(config.algorithm_output_dir + method_name + ".time");
+    time_out << (int)timer.getTime(method_name) << endl;
 }
 
 void mobrkgaFrag(config_t config, evo_alg::brkga::config_t<evo_alg::FitnessFunction<double>>& brkga_config,
@@ -362,8 +367,11 @@ void mobrkgaFrag(config_t config, evo_alg::brkga::config_t<evo_alg::FitnessFunct
                  vector<tuple<vector<vector<double>>, evo_alg::fitness::frontier_t>>& best_frontiers,
                  vector<double>& diversity) {
     vector<double> diversity_2;
+
+    timer.startTimer("frag");
     tie(pop, archive, best_frontiers, diversity_2) =
         evo_alg::brkga::runMultiObjective<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(brkga_config);
+    timer.stopTimer("frag");
 
     for (size_t index = 0; index < diversity_2.size(); ++index) {
         diversity.push_back(diversity_2[index]);
@@ -379,8 +387,11 @@ void mobrkgaRes(config_t config, evo_alg::brkga::config_t<evo_alg::FitnessFuncti
                 vector<tuple<vector<vector<double>>, evo_alg::fitness::frontier_t>>& best_frontiers,
                 vector<double>& diversity) {
     vector<double> diversity_2;
+
+    timer.startTimer("res");
     tie(pop, archive, best_frontiers, diversity_2) =
         evo_alg::brkga::runMultiObjective<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(brkga_config);
+    timer.stopTimer("res");
 
     for (size_t index = 0; index < diversity_2.size(); ++index) {
         diversity.push_back(diversity_2[index]);
@@ -493,6 +504,9 @@ int main(int argc, char** argv) {
     for (size_t index = 0; index < diversity.size(); ++index) {
         diversity_out << index << " " << diversity[index] << endl;
     }
+
+    ofstream time_out(config.algorithm_output_dir + "total.time");
+    time_out << (int)(timer.getTime("frag") + timer.getTime("res")) << endl;
 
     return EXIT_SUCCESS;
 }

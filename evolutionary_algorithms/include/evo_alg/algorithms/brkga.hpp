@@ -264,6 +264,8 @@ namespace evo_alg {
         std::tuple<Population<IndividualType>, Population<IndividualType>,
                    std::vector<std::tuple<std::vector<std::vector<double>>, fitness::frontier_t>>, std::vector<double>>
         runMultiObjective(config_t<FitnessType> config) {
+            utils::Timer timer;
+
             size_t const iteration_num = config.iteration_num;
             size_t const pop_size = config.pop_size;
             size_t const archive_size = config.archive_size;
@@ -278,9 +280,6 @@ namespace evo_alg {
             size_t elite_size = (size_t)((double) pop_size * config.elite_fraction);
             size_t mut_size = (size_t)((double) pop_size * config.mut_fraction);
             size_t cross_size = pop_size - elite_size - mut_size;
-
-            std::chrono::duration<double, std::milli> it_time, gen_time, eval_time;
-            std::chrono::time_point<std::chrono::high_resolution_clock> t1, t2, tt1, tt2;
 
             Population<real_individual_t> population(pop_size), new_population(pop_size), archive(archive_size);
             Population<IndividualType> decoded_population(pop_size), decoded_archive(archive_size);
@@ -330,7 +329,7 @@ namespace evo_alg {
             diversity.push_back(population.getPairwiseDiversity());
 
             for (size_t it = 0; it < iteration_num; ++it) {
-                tt1 = std::chrono::high_resolution_clock::now();
+                timer.startTimer("it_time");
 
                 initializator::uniformRandomInit(new_population, brkga_fitness, mut_size);
 
@@ -374,7 +373,7 @@ namespace evo_alg {
                     new_population[mut_size + index].setChromosome(population[ind_index].getChromosome());
                 }
 
-                t1 = std::chrono::high_resolution_clock::now();
+                timer.startTimer("gen_time");
                 for (size_t index = 0; index < cross_size; ++index) {
                     std::uniform_int_distribution<size_t> elite_dist(0, elite_size - 1);
                     std::uniform_int_distribution<size_t> non_elite_dist(elite_size, pop_size - 1);
@@ -387,15 +386,13 @@ namespace evo_alg {
 
                     new_population[mut_size + elite_size + index].setChromosome(child.getChromosome());
                 }
-                t2 = std::chrono::high_resolution_clock::now();
-                gen_time = t2 - t1;
+                timer.stopTimer("gen_time");
 
                 assert(mut_size + elite_size + cross_size == pop_size);
 
-                t1 = std::chrono::high_resolution_clock::now();
+                timer.startTimer("fitness_time");
                 new_population.evaluateFitness();
-                t2 = std::chrono::high_resolution_clock::now();
-                eval_time = t2 - t1;
+                timer.stopTimer("fitness_time");
 
                 for (size_t index = 0; index < pop_size; ++index) {
                     population[index].setChromosome(new_population[index].getChromosome());
@@ -416,16 +413,15 @@ namespace evo_alg {
                 double const diver = population.getPairwiseDiversity(mut_size);
                 diversity.push_back(diver);
 
-                tt2 = std::chrono::high_resolution_clock::now();
-                it_time = tt2 - tt1;
+                timer.stopTimer("it_time");
 
                 if (config.log_step > 0 && it % config.log_step == 0) {
                     printf("Gen %lu -> best frontier size: %3lu | diversity: %.3f | e: %.2f | m: "
                            "%.2f | c: %.2f | dt: %.2f | de: %.2f",
                            it, best_individuals_index.size(), diver, config.elite_fraction, config.mut_fraction,
                            config.elite_cross_pr, config.diversity_threshold, config.diversity_enforcement);
-                    printf(" || it: %.0fms | gen: %.0fms | eval: %.0fms\n", it_time.count(), gen_time.count(),
-                           eval_time.count());
+                    printf(" || it: %.0fms | gen: %.0fms | eval: %.0fms\n", timer.getTime("it_time"),
+                           timer.getTime("gen_time"), timer.getTime("fitness_time"));
                 }
 
                 if (config.update_fn)

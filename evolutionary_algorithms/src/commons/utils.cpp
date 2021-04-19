@@ -16,5 +16,19 @@ namespace evo_alg {
             mpi_size = size;
             mpi_rank = rank;
         }
+
+        void Timer::startTimer(std::string timer_name) {
+            start_time_[timer_name] = std::chrono::high_resolution_clock::now();
+        }
+
+        void Timer::stopTimer(std::string timer_name) {
+            end_time_[timer_name] = std::chrono::high_resolution_clock::now();
+        }
+
+        double Timer::getTime(std::string timer_name) {
+            std::chrono::duration<double, std::milli> time = end_time_[timer_name] - start_time_[timer_name];
+
+            return time.count();
+        }
     }
 }

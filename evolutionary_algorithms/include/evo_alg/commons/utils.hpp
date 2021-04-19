@@ -3,7 +3,9 @@
 
 #include <chrono>
 #include <iostream>
+#include <map>
 #include <random>
+#include <string>
 
 namespace evo_alg {
     namespace utils {
@@ -41,6 +43,17 @@ namespace evo_alg {
         bool numericGreaterEqual(T const x, T const y, double const precision = eps) {
             return numericGreater(x, y, precision) || numericEqual(x, y, precision);
         }
+
+        class Timer {
+          public:
+            void startTimer(std::string timer_name);
+            void stopTimer(std::string timer_name);
+            double getTime(std::string timer_name);
+
+          private:
+            std::map<std::string, std::chrono::time_point<std::chrono::high_resolution_clock>> start_time_;
+            std::map<std::string, std::chrono::time_point<std::chrono::high_resolution_clock>> end_time_;
+        };
     }
 }
 
