@@ -25,6 +25,8 @@ struct config_t {
     double diversity_enforcement = 0.5;
 
     size_t pose_start = 1;
+
+    string output_level = "all";
 };
 
 string normalizeDirPath(string path) {
@@ -90,6 +92,8 @@ void setConfigValue(config_t& config, map<string, string>& config_values, string
 
         } else if (value_name == "protein_offset") {
             config.pose_start = stoul(value);
+        } else if (value_name == "output_level") {
+            config.output_level = value;
         }
     }
 }
@@ -158,4 +162,5 @@ void setConfig(string config_file_name, config_t& config) {
     setConfigValue(config, config_values, "diversity_threshold", false);
     setConfigValue(config, config_values, "diversity_enforcement", false);
     setConfigValue(config, config_values, "protein_offset", false);
+    setConfigValue(config, config_values, "output_level", false);
 }

@@ -328,7 +328,7 @@ namespace evo_alg {
             best_frontiers.emplace_back(best_individuals_chromosome, best_frontier);
             diversity.push_back(population.getPairwiseDiversity());
 
-            for (size_t it = 0; it < iteration_num; ++it) {
+            for (size_t it = 1; it < iteration_num; ++it) {
                 timer.startTimer("it_time");
 
                 initializator::uniformRandomInit(new_population, brkga_fitness, mut_size);

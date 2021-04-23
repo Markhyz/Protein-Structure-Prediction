@@ -1,5 +1,7 @@
 #include "protein_brkga.hpp"
 
+#include <sstream>
+
 string sequence;
 size_t residue_num;
 size_t pose_start;
@@ -343,7 +345,7 @@ void outputAlgorithmResults(config_t config,
         fitness_out.precision(9);
         for (auto fit : fitness) {
             vector<double> values = fit.getValues();
-            fitness_out << values[0];
+            fitness_out << values[0] * -1;
             for (size_t i = 1; i < values.size(); ++i)
                 fitness_out << " " << values[i];
             fitness_out << endl;
@@ -414,6 +416,12 @@ int main(int argc, char** argv) {
 
     setConfig(config_file_name, config);
 
+    auto coutbuf = cout.rdbuf();
+    ostringstream oss;
+    if (config.output_level == "none") {
+        cout.rdbuf(oss.rdbuf());
+    }
+
     rosettaInit(rosetta_argv, config);
 
     cout.precision(9);
@@ -446,7 +454,7 @@ int main(int argc, char** argv) {
     evo_alg::brkga::config_t<evo_alg::FitnessFunction<double>> brkga_config(
         iteration_num, pop_size, frag9_chromosome_size, elite_x, mut_x, cr_x, fit_centroid, frag9Decoder);
 
-    brkga_config.log_step = 1;
+    brkga_config.log_step = config.output_level == "none" ? 0 : 1;
     brkga_config.diversity_threshold = diversity_threshold;
     brkga_config.diversity_enforcement = diversity_enforcement;
     brkga_config.update_fn = update_fn;
@@ -507,6 +515,8 @@ int main(int argc, char** argv) {
 
     ofstream time_out(config.algorithm_output_dir + "total.time");
     time_out << (int)(timer.getTime("frag") + timer.getTime("res")) << endl;
+
+    cout.rdbuf(coutbuf);
 
     return EXIT_SUCCESS;
 }
