@@ -243,8 +243,9 @@ namespace evo_alg {
     template <class IndividualType>
     void Population<IndividualType>::evaluateFitness() {
 #pragma omp parallel for schedule(dynamic)
-        for (size_t index = 0; index < population_.size(); ++index)
+        for (size_t index = 0; index < population_.size(); ++index) {
             population_[index].evaluateFitness();
+        }
     }
 #endif
 }

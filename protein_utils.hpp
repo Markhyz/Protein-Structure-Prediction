@@ -34,6 +34,10 @@ vector<tuple<size_t, size_t, double>> cm;
 double max_energy = 0;
 double max_energy_fa = 0;
 
+double ss_total = 0;
+double cm_total = 0;
+double energy_min = 1e9, energy_max = -1e9;
+
 void getSS(string ss_path) {
     ifstream ss_in(ss_path);
     string line;
@@ -45,8 +49,14 @@ void getSS(string ss_path) {
     string residue, res_ss;
     double c_prob, h_prob, e_prob;
     while (ss_in >> index >> residue >> res_ss >> c_prob >> h_prob >> e_prob) {
-        if (res_ss == "C")
+        if (res_ss == "C") {
             res_ss = "L";
+            ss_total += c_prob;
+        } else if (res_ss == "H") {
+            ss_total += h_prob;
+        } else if (res_ss == "E") {
+            ss_total += e_prob;
+        }
         ss += res_ss;
         ss_prob.push_back({c_prob, h_prob, e_prob});
     }
@@ -144,6 +154,7 @@ void getContactMap(string cm_path) {
         i = res_pairs[contact_prob[index].second].first;
         j = res_pairs[contact_prob[index].second].second;
         cm.push_back({i, j, contact_prob[index].first});
+        cm_total += contact_prob[index].first;
     }
 }
 
@@ -177,10 +188,10 @@ pair<double, double> ssScore(core::pose::Pose const& pose) {
 
     double ss_score = 0, ss_total = 0;
     for (size_t ss_index = 0; ss_index < protein_ss.size(); ++ss_index) {
-        if (ss[ss_index] == 'L')
-            continue;
-
         double og_prob;
+        if (ss[ss_index] == 'L') {
+            og_prob = ss_prob[ss_index][0];
+        }
         if (ss[ss_index] == 'H') {
             og_prob = ss_prob[ss_index][1];
         }
@@ -225,6 +236,16 @@ pair<double, double> cmScore(core::pose::Pose const& pose) {
     }
 
     return {cm_score, cm_total};
+}
+
+void setEnergyFunctionLimits(vector<tuple<vector<vector<double>>, evo_alg::fitness::frontier_t>>& best_frontiers) {
+    for (auto& best_frontier : best_frontiers) {
+        evo_alg::fitness::frontier_t fitness = get<1>(best_frontier);
+        for (auto& fit_values : fitness) {
+            energy_min = min(energy_min, -fit_values[0]);
+            energy_max = max(energy_max, -fit_values[0]);
+        }
+    }
 }
 
 void repackProtein(core::pose::Pose& pose, core::scoring::ScoreFunctionOP& scorefnx) {

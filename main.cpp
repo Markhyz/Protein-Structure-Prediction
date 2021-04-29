@@ -18,6 +18,8 @@ evo_alg::FitnessFunction<double>::shared_ptr fit_fa;
 core::scoring::ScoreFunctionOP energy_score_centroid;
 core::scoring::ScoreFunctionOP energy_score_fa;
 
+unique_ptr<core::scoring::dssp::Dssp> dssp_native;
+
 evo_alg::utils::Timer timer;
 
 void rosettaInit(char** rosetta_argv, config_t config) {
@@ -73,6 +75,8 @@ void rosettaInit(char** rosetta_argv, config_t config) {
 
     core::import_pose::pose_from_file(*native_structure2, config.protein_pdb_path, false, core::import_pose::PDB_file);
     core::util::switch_to_residue_type_set(*native_structure2, core::chemical::CENTROID);
+
+    dssp_native = make_unique<core::scoring::dssp::Dssp>(*native_structure);
 
     getSS(config.protein_ss_path);
     getFragments(config.protein_frag3_path, 3, frag3, frag3_prob);
@@ -280,11 +284,10 @@ void outputProteinResults(config_t config, evo_alg::Population<evo_alg::Individu
     cout << leftPadding(4) << "Mean RMSD: " << mean_rmsd << endl;
     cout << leftPadding(4) << "Mean GDT_TS: " << mean_gdt << endl << endl;
 
-    core::scoring::dssp::Dssp dssp_native(*native_structure);
     core::scoring::dssp::Dssp dssp(*fa_pose);
 
     cout << leftPadding(4) << "Secondary structure" << endl;
-    cout << leftPadding(8) << "Native:    " << dssp_native.get_dssp_secstruct() << endl;
+    cout << leftPadding(8) << "Native:    " << dssp_native->get_dssp_secstruct() << endl;
     cout << leftPadding(8) << "Input:     " << ss.substr(pose_start - 1) << endl;
     cout << leftPadding(8) << "Predicted: " << dssp.get_dssp_secstruct() << endl << endl;
 
@@ -325,6 +328,8 @@ void outputAlgorithmResults(config_t config,
     for (size_t index = 0; index < best_frontiers.size(); ++index) {
         ofstream fitness_out(config.algorithm_output_dir + method_name + "_gen_" + to_string(index + 1) +
                              string(".fitness"));
+        ofstream normalized_fitness_out(config.algorithm_output_dir + method_name + "_gen_" + to_string(index + 1) +
+                                        string(".norm_fitness"));
         ofstream chromosome_out(config.algorithm_output_dir + method_name + "_gen_" + to_string(index + 1) +
                                 string(".chromosome"));
 
@@ -342,13 +347,20 @@ void outputAlgorithmResults(config_t config,
         }
 
         fitness_out << fixed;
+        normalized_fitness_out << fixed;
         fitness_out.precision(9);
+        normalized_fitness_out.precision(9);
         for (auto fit : fitness) {
             vector<double> values = fit.getValues();
-            fitness_out << values[0] * -1;
-            for (size_t i = 1; i < values.size(); ++i)
-                fitness_out << " " << values[i];
-            fitness_out << endl;
+            double energy_value = -values[0];
+            double ss_value = values[1];
+            double cm_value = values[2];
+            fitness_out << energy_value << " " << ss_value << " " << cm_value << endl;
+
+            double norm_energy_value = (energy_value - energy_min) / (energy_max - energy_min);
+            double norm_ss_value = ss_value / ss_total;
+            double norm_cm_value = cm_value / cm_total;
+            normalized_fitness_out << norm_energy_value << " " << norm_ss_value << " " << norm_cm_value << endl;
         }
     }
 
@@ -361,46 +373,6 @@ void outputAlgorithmResults(config_t config,
 
     ofstream time_out(config.algorithm_output_dir + method_name + ".time");
     time_out << (int)timer.getTime(method_name) << endl;
-}
-
-void mobrkgaFrag(config_t config, evo_alg::brkga::config_t<evo_alg::FitnessFunction<double>>& brkga_config,
-                 evo_alg::Population<evo_alg::Individual<double>>& pop,
-                 evo_alg::Population<evo_alg::Individual<double>>& archive,
-                 vector<tuple<vector<vector<double>>, evo_alg::fitness::frontier_t>>& best_frontiers,
-                 vector<double>& diversity) {
-    vector<double> diversity_2;
-
-    timer.startTimer("frag");
-    tie(pop, archive, best_frontiers, diversity_2) =
-        evo_alg::brkga::runMultiObjective<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(brkga_config);
-    timer.stopTimer("frag");
-
-    for (size_t index = 0; index < diversity_2.size(); ++index) {
-        diversity.push_back(diversity_2[index]);
-    }
-
-    outputProteinResults(config, archive, "frag");
-    outputAlgorithmResults(config, best_frontiers, diversity_2, "frag");
-}
-
-void mobrkgaRes(config_t config, evo_alg::brkga::config_t<evo_alg::FitnessFunction<double>>& brkga_config,
-                evo_alg::Population<evo_alg::Individual<double>>& pop,
-                evo_alg::Population<evo_alg::Individual<double>>& archive,
-                vector<tuple<vector<vector<double>>, evo_alg::fitness::frontier_t>>& best_frontiers,
-                vector<double>& diversity) {
-    vector<double> diversity_2;
-
-    timer.startTimer("res");
-    tie(pop, archive, best_frontiers, diversity_2) =
-        evo_alg::brkga::runMultiObjective<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(brkga_config);
-    timer.stopTimer("res");
-
-    for (size_t index = 0; index < diversity_2.size(); ++index) {
-        diversity.push_back(diversity_2[index]);
-    }
-
-    outputProteinResults(config, archive, "res");
-    outputAlgorithmResults(config, best_frontiers, diversity_2, "res");
 }
 
 int main(int argc, char** argv) {
@@ -427,9 +399,9 @@ int main(int argc, char** argv) {
     cout.precision(9);
     cout << fixed;
 
-    evo_alg::Population<evo_alg::Individual<double>> pop, archive;
-    vector<tuple<vector<vector<double>>, evo_alg::fitness::frontier_t>> best_frontiers;
-    vector<double> diversity;
+    evo_alg::Population<evo_alg::Individual<double>> frag_pop, frag_archive, res_pop, res_archive;
+    vector<tuple<vector<vector<double>>, evo_alg::fitness::frontier_t>> frag_best_frontiers, res_best_frontiers;
+    vector<double> frag_diversity, res_diversity;
 
     size_t frag3_chromosome_size = ceil(residue_indexes.size() / 3.0);
     size_t frag9_chromosome_size = ceil(residue_indexes.size() / 9.0);
@@ -459,12 +431,15 @@ int main(int argc, char** argv) {
     brkga_config.diversity_enforcement = diversity_enforcement;
     brkga_config.update_fn = update_fn;
 
-    mobrkgaFrag(config, brkga_config, pop, archive, best_frontiers, diversity);
+    timer.startTimer("frag");
+    tie(frag_pop, frag_archive, frag_best_frontiers, frag_diversity) =
+        evo_alg::brkga::runMultiObjective<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(brkga_config);
+    timer.stopTimer("frag");
 
     vector<vector<double>> initial_pop;
 
-    for (size_t ind_index = 0; ind_index < min(archive.getSize(), pop.getSize()); ++ind_index) {
-        vector<double> chromosome = archive[ind_index].getChromosome();
+    for (size_t ind_index = 0; ind_index < min(frag_archive.getSize(), frag_pop.getSize()); ++ind_index) {
+        vector<double> chromosome = frag_archive[ind_index].getChromosome();
         vector<double> coded_chromosome;
         for (size_t res_index = 0; res_index < residue_num; ++res_index) {
             size_t chromosome_res_idx = residue_indexes[res_index];
@@ -504,13 +479,49 @@ int main(int argc, char** argv) {
     brkga_config.decoder = residueDecoder;
     brkga_config.initial_pop = initial_pop;
 
-    mobrkgaRes(config, brkga_config, pop, archive, best_frontiers, diversity);
+    timer.startTimer("res");
+    tie(res_pop, res_archive, res_best_frontiers, res_diversity) =
+        evo_alg::brkga::runMultiObjective<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(brkga_config);
+    timer.stopTimer("res");
+
+    outputProteinResults(config, frag_archive, "frag");
+    outputProteinResults(config, res_archive, "res");
+
+    setEnergyFunctionLimits(frag_best_frontiers);
+    setEnergyFunctionLimits(res_best_frontiers);
+
+    outputAlgorithmResults(config, frag_best_frontiers, frag_diversity, "frag");
+    outputAlgorithmResults(config, res_best_frontiers, res_diversity, "res");
+
+    vector<size_t> archive_best_individuals = res_archive.getBestIndividuals();
+    ofstream final_fitness_out(config.algorithm_output_dir + "final.fitness");
+    ofstream normalized_final_fitness_out(config.algorithm_output_dir + "final.norm_fitness");
+    final_fitness_out << fixed;
+    normalized_final_fitness_out << fixed;
+    final_fitness_out.precision(9);
+    normalized_final_fitness_out.precision(9);
+    for (size_t best_ind : archive_best_individuals) {
+        evo_alg::fitness::FitnessValue values = res_archive[best_ind].getFitnessValue();
+        double energy_value = -values[0];
+        double ss_value = values[1];
+        double cm_value = values[2];
+        final_fitness_out << energy_value << " " << ss_value << " " << cm_value << endl;
+
+        double norm_energy_value = (energy_value - energy_min) / (energy_max - energy_min);
+        double norm_ss_value = ss_value / ss_total;
+        double norm_cm_value = cm_value / cm_total;
+        normalized_final_fitness_out << norm_energy_value << " " << norm_ss_value << " " << norm_cm_value << endl;
+    }
+
+    vector<double> total_diversity;
+    total_diversity.insert(total_diversity.end(), frag_diversity.begin(), frag_diversity.end());
+    total_diversity.insert(total_diversity.end(), res_diversity.begin(), res_diversity.end());
 
     ofstream diversity_out(config.algorithm_output_dir + "total.diversity");
     diversity_out << fixed;
     diversity_out.precision(9);
-    for (size_t index = 0; index < diversity.size(); ++index) {
-        diversity_out << index << " " << diversity[index] << endl;
+    for (size_t index = 0; index < total_diversity.size(); ++index) {
+        diversity_out << index << " " << total_diversity[index] << endl;
     }
 
     ofstream time_out(config.algorithm_output_dir + "total.time");
