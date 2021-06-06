@@ -322,23 +322,42 @@ void outputProteinResults(config_t config, evo_alg::Population<evo_alg::Individu
     mean_gdt_out << mean_gdt << endl;
 }
 
+void outputFitness(config_t config, string output_file_name, evo_alg::fitness::frontier_t frontier) {
+    ofstream fitness_out(config.algorithm_output_dir + output_file_name + string(".fitness"));
+    ofstream normalized_fitness_out(config.algorithm_output_dir + output_file_name + string(".norm_fitness"));
+
+    fitness_out << fixed;
+    normalized_fitness_out << fixed;
+    fitness_out.precision(9);
+    normalized_fitness_out.precision(9);
+    for (auto fitness : frontier) {
+        vector<double> values = fitness.getValues();
+        double energy_value = -values[0];
+        double ss_value = values[1];
+        double cm_value = values[2];
+        fitness_out << energy_value << " " << ss_value << " " << cm_value << endl;
+
+        double norm_energy_value = (energy_value - energy_min) / (energy_max - energy_min);
+        double norm_ss_value = ss_value / ss_total;
+        double norm_cm_value = cm_value / cm_total;
+        normalized_fitness_out << norm_energy_value << " " << norm_ss_value << " " << norm_cm_value << endl;
+    }
+}
+
 void outputAlgorithmResults(config_t config,
-                            vector<tuple<vector<vector<double>>, evo_alg::fitness::frontier_t>>& best_frontiers,
+                            vector<tuple<vector<vector<long double>>, evo_alg::fitness::frontier_t>>& best_frontiers,
                             vector<double>& diversity, string method_name) {
     for (size_t index = 0; index < best_frontiers.size(); ++index) {
-        ofstream fitness_out(config.algorithm_output_dir + method_name + "_gen_" + to_string(index + 1) +
-                             string(".fitness"));
-        ofstream normalized_fitness_out(config.algorithm_output_dir + method_name + "_gen_" + to_string(index + 1) +
-                                        string(".norm_fitness"));
+
         ofstream chromosome_out(config.algorithm_output_dir + method_name + "_gen_" + to_string(index + 1) +
                                 string(".chromosome"));
 
-        vector<vector<double>> chromosomes;
-        evo_alg::fitness::frontier_t fitness;
-        tie(chromosomes, fitness) = best_frontiers[index];
+        vector<vector<long double>> chromosomes;
+        evo_alg::fitness::frontier_t best_frontier;
+        tie(chromosomes, best_frontier) = best_frontiers[index];
 
         chromosome_out << fixed;
-        chromosome_out.precision(15);
+        chromosome_out.precision(18);
         for (auto chromosome : chromosomes) {
             chromosome_out << chromosome[0];
             for (size_t i = 1; i < chromosome.size(); ++i)
@@ -346,22 +365,8 @@ void outputAlgorithmResults(config_t config,
             chromosome_out << endl;
         }
 
-        fitness_out << fixed;
-        normalized_fitness_out << fixed;
-        fitness_out.precision(9);
-        normalized_fitness_out.precision(9);
-        for (auto fit : fitness) {
-            vector<double> values = fit.getValues();
-            double energy_value = -values[0];
-            double ss_value = values[1];
-            double cm_value = values[2];
-            fitness_out << energy_value << " " << ss_value << " " << cm_value << endl;
-
-            double norm_energy_value = (energy_value - energy_min) / (energy_max - energy_min);
-            double norm_ss_value = ss_value / ss_total;
-            double norm_cm_value = cm_value / cm_total;
-            normalized_fitness_out << norm_energy_value << " " << norm_ss_value << " " << norm_cm_value << endl;
-        }
+        string fitness_file_name = method_name + "_gen_" + to_string(index + 1);
+        outputFitness(config, fitness_file_name, best_frontier);
     }
 
     ofstream diversity_out(config.algorithm_output_dir + method_name + ".diversity");
@@ -400,8 +405,10 @@ int main(int argc, char** argv) {
     cout << fixed;
 
     evo_alg::Population<evo_alg::Individual<double>> frag_pop, frag_archive, res_pop, res_archive;
-    vector<tuple<vector<vector<double>>, evo_alg::fitness::frontier_t>> frag_best_frontiers, res_best_frontiers;
+    vector<tuple<vector<vector<long double>>, evo_alg::fitness::frontier_t>> frag_best_frontiers, res_best_frontiers;
     vector<double> frag_diversity, res_diversity;
+    vector<size_t> best_individuals;
+    evo_alg::fitness::frontier_t best_frontier;
 
     size_t frag3_chromosome_size = ceil(residue_indexes.size() / 3.0);
     size_t frag9_chromosome_size = ceil(residue_indexes.size() / 9.0);
@@ -436,41 +443,52 @@ int main(int argc, char** argv) {
         evo_alg::brkga::runMultiObjective<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(brkga_config);
     timer.stopTimer("frag");
 
-    vector<vector<double>> initial_pop;
+    vector<vector<long double>> initial_pop;
 
+    evo_alg::Population<evo_alg::Individual<double>> transcoded_pop;
+    evo_alg::Population<evo_alg::Individual<double>> rough_pop;
     for (size_t ind_index = 0; ind_index < min(frag_archive.getSize(), frag_pop.getSize()); ++ind_index) {
         vector<double> chromosome = frag_archive[ind_index].getChromosome();
-        vector<double> coded_chromosome;
+        vector<long double> coded_chromosome;
         for (size_t res_index = 0; res_index < residue_num; ++res_index) {
             size_t chromosome_res_idx = residue_indexes[res_index];
-            double coded_phi = trunc((chromosome[chromosome_res_idx] + 180) / 360 * 1e7);
-            double coded_psi = trunc((chromosome[chromosome_res_idx + 1] + 180) / 360 * 1e7);
+            long double coded_phi = trunc((chromosome[chromosome_res_idx] + 180) / 360 * 1e6);
+            long double coded_psi = trunc((chromosome[chromosome_res_idx + 1] + 180) / 360 * 1e6);
 
-            double coded_residue = (coded_phi * 1e7 + coded_psi) / 1e14;
+            long double omega = max(min(normalizeAngle(chromosome[chromosome_res_idx + 2], true), 200.0), 160.0);
+            long double coded_omega = trunc((omega - 160) / 40 * 1e3);
+
+            long double coded_residue = (coded_phi * 1e11 + coded_psi * 1e4 + coded_omega) / 1e18;
 
             coded_chromosome.push_back(coded_residue);
         }
 
+        evo_alg::Individual<double> rough_ind(fit_centroid, chromosome);
+        rough_pop.appendIndividual(rough_ind);
+
         vector<double> chromosome_2 = residueDecoder(coded_chromosome);
+
         for (size_t index = 0; index < chromosome.size(); ++index) {
-            if (angle_types[index] != angle_type::omega &&
-                !evo_alg::utils::numericEqual(chromosome[index], chromosome_2[index], 1e-2)) {
-                double gene_1 = chromosome[index];
-                double gene_2 = chromosome_2[index];
-                if (gene_1 < 0 && gene_2 > 0) {
-                    gene_1 += 360;
-                }
-                if (gene_1 > 0 && gene_2 < 0) {
-                    gene_2 += 360;
-                }
-                if (!evo_alg::utils::numericEqual(gene_1, gene_2, 1e-2)) {
+            double angle_1 = normalizeAngle(chromosome[index], true);
+            double angle_2 = normalizeAngle(chromosome_2[index], true);
+            if (angle_types[index] == angle_type::omega) {
+                angle_1 = max(min(angle_1, 200.0), 160.0);
+                if (!evo_alg::utils::numericEqual(angle_1, angle_2, 1e-1)) {
                     cout << "mapping error" << endl;
                     cout << index << " " << (int)angle_types[index] << endl;
-                    cout << gene_1 << " " << gene_2 << endl;
+                    cout << angle_1 << " " << angle_2 << endl;
                     exit(-1);
                 }
+            } else if (!evo_alg::utils::numericEqual(angle_1, angle_2, 1e-2)) {
+                cout << "mapping error" << endl;
+                cout << index << " " << (int)angle_types[index] << endl;
+                cout << angle_1 << " " << angle_2 << endl;
+                exit(-1);
             }
         }
+
+        evo_alg::Individual<double> transcoded_ind(fit_centroid, chromosome_2);
+        transcoded_pop.appendIndividual(transcoded_ind);
 
         initial_pop.push_back(coded_chromosome);
     }
@@ -493,25 +511,56 @@ int main(int argc, char** argv) {
     outputAlgorithmResults(config, frag_best_frontiers, frag_diversity, "frag");
     outputAlgorithmResults(config, res_best_frontiers, res_diversity, "res");
 
-    vector<size_t> archive_best_individuals = res_archive.getBestIndividuals();
-    ofstream final_fitness_out(config.algorithm_output_dir + "final.fitness");
-    ofstream normalized_final_fitness_out(config.algorithm_output_dir + "final.norm_fitness");
-    final_fitness_out << fixed;
-    normalized_final_fitness_out << fixed;
-    final_fitness_out.precision(9);
-    normalized_final_fitness_out.precision(9);
-    for (size_t best_ind : archive_best_individuals) {
-        evo_alg::fitness::FitnessValue values = res_archive[best_ind].getFitnessValue();
-        double energy_value = -values[0];
-        double ss_value = values[1];
-        double cm_value = values[2];
-        final_fitness_out << energy_value << " " << ss_value << " " << cm_value << endl;
+    rough_pop.evaluateFitness();
+    transcoded_pop.evaluateFitness();
 
-        double norm_energy_value = (energy_value - energy_min) / (energy_max - energy_min);
-        double norm_ss_value = ss_value / ss_total;
-        double norm_cm_value = cm_value / cm_total;
-        normalized_final_fitness_out << norm_energy_value << " " << norm_ss_value << " " << norm_cm_value << endl;
+    best_individuals = rough_pop.getBestIndividuals();
+    best_frontier.clear();
+    for (size_t ind : best_individuals) {
+        best_frontier.push_back(rough_pop[ind].getFitnessValue());
     }
+    outputFitness(config, "rough", best_frontier);
+    ofstream rough_chromosome_out(config.algorithm_output_dir + "rough.chromosome");
+    rough_chromosome_out << fixed;
+    rough_chromosome_out.precision(5);
+    for (size_t index = 0; index < rough_pop.getSize(); ++index) {
+        vector<double> chromosome = rough_pop[index].getChromosome();
+        rough_chromosome_out << chromosome[0];
+        for (size_t i = 1; i < chromosome.size(); ++i)
+            rough_chromosome_out << " " << chromosome[i];
+        rough_chromosome_out << endl;
+    }
+
+    best_individuals = transcoded_pop.getBestIndividuals();
+    best_frontier.clear();
+    for (size_t ind : best_individuals) {
+        best_frontier.push_back(transcoded_pop[ind].getFitnessValue());
+    }
+    outputFitness(config, "transcoded", best_frontier);
+    ofstream transcoded_chromosome_out(config.algorithm_output_dir + "transcoded.chromosome");
+    transcoded_chromosome_out << fixed;
+    transcoded_chromosome_out.precision(5);
+    for (size_t index = 0; index < transcoded_pop.getSize(); ++index) {
+        vector<double> chromosome = transcoded_pop[index].getChromosome();
+        transcoded_chromosome_out << chromosome[0];
+        for (size_t i = 1; i < chromosome.size(); ++i)
+            transcoded_chromosome_out << " " << chromosome[i];
+        transcoded_chromosome_out << endl;
+    }
+
+    best_individuals = frag_archive.getBestIndividuals();
+    best_frontier.clear();
+    for (size_t ind : best_individuals) {
+        best_frontier.push_back(frag_archive[ind].getFitnessValue());
+    }
+    outputFitness(config, "first_phase", best_frontier);
+
+    best_individuals = res_archive.getBestIndividuals();
+    best_frontier.clear();
+    for (size_t ind : best_individuals) {
+        best_frontier.push_back(res_archive[ind].getFitnessValue());
+    }
+    outputFitness(config, "second_phase", best_frontier);
 
     vector<double> total_diversity;
     total_diversity.insert(total_diversity.end(), frag_diversity.begin(), frag_diversity.end());

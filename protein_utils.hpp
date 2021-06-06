@@ -238,7 +238,7 @@ pair<double, double> cmScore(core::pose::Pose const& pose) {
     return {cm_score, cm_total};
 }
 
-void setEnergyFunctionLimits(vector<tuple<vector<vector<double>>, evo_alg::fitness::frontier_t>>& best_frontiers) {
+void setEnergyFunctionLimits(vector<tuple<vector<vector<long double>>, evo_alg::fitness::frontier_t>>& best_frontiers) {
     for (auto& best_frontier : best_frontiers) {
         evo_alg::fitness::frontier_t fitness = get<1>(best_frontier);
         for (auto& fit_values : fitness) {

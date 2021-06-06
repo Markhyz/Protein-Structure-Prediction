@@ -55,4 +55,4 @@ legend = plt.legend()
 # for fitness in fitness_data:
 #     ax.scatter(fitness[1], fitness[2], fitness[0])
 
-plt.savefig(output_file, format='svg', dpi=1200)
+plt.savefig(output_file, format='png', dpi=1200)

@@ -5,7 +5,15 @@
 
 #include <evo_alg/algorithms/brkga.hpp>
 
-vector<double> frag3Decoder(vector<double> const& encoded_chromosome) {
+double normalizeAngle(double angle, bool full) {
+    if (full) {
+        return angle < 0 ? angle + 360 : angle;
+    } else {
+        return angle > 180 ? angle - 360 : angle;
+    }
+}
+
+vector<double> frag3Decoder(vector<long double> const& encoded_chromosome) {
     vector<double> decoded_chromosome(angle_types.size());
     for (size_t gene_index = 0; gene_index < encoded_chromosome.size(); ++gene_index) {
         size_t res_index = gene_index * 3;
@@ -25,7 +33,7 @@ vector<double> frag3Decoder(vector<double> const& encoded_chromosome) {
     return decoded_chromosome;
 }
 
-vector<double> frag9Decoder(vector<double> const& encoded_chromosome) {
+vector<double> frag9Decoder(vector<long double> const& encoded_chromosome) {
     vector<double> decoded_chromosome(angle_types.size());
     for (size_t gene_index = 0; gene_index < encoded_chromosome.size(); ++gene_index) {
         size_t res_index = gene_index * 9;
@@ -45,7 +53,7 @@ vector<double> frag9Decoder(vector<double> const& encoded_chromosome) {
     return decoded_chromosome;
 }
 
-vector<double> angleDecoder(vector<double> const& encoded_chromosome) {
+vector<double> angleDecoder(vector<long double> const& encoded_chromosome) {
     vector<double> decoded_chromosome;
     for (size_t res_index = 0; res_index < residue_indexes.size(); ++res_index) {
         decoded_chromosome.push_back(-180 + encoded_chromosome[res_index * 3] * 360);
@@ -59,17 +67,30 @@ vector<double> angleDecoder(vector<double> const& encoded_chromosome) {
     return decoded_chromosome;
 }
 
-vector<double> residueDecoder(vector<double> const& encoded_chromosome) {
+vector<double> residueDecoder(vector<long double> const& encoded_chromosome) {
     vector<double> decoded_chromosome;
     for (size_t res_index = 0; res_index < residue_indexes.size(); ++res_index) {
-        double gene = encoded_chromosome[res_index];
-        double phi = trunc(gene * 1e7) / 1e7;
-        gene = (gene * 1e7 - trunc(gene * 1e7));
-        double psi = trunc(gene * 1e7) / 1e7;
+        long double gene = encoded_chromosome[res_index];
+        uint64_t int_gene = gene * 1e18;
+        string str_gene = to_string(int_gene);
+        str_gene = string(18 - str_gene.size(), '0') + str_gene;
+        string str_phi = str_gene.substr(0, 7);
+        str_phi = str_phi.substr(0, 1) + "." + str_phi.substr(1);
+        string str_psi = str_gene.substr(7, 7);
+        str_psi = str_psi.substr(0, 1) + "." + str_psi.substr(1);
+        string str_omega = str_gene.substr(14);
+        str_omega = str_omega.substr(0, 1) + "." + str_omega.substr(1);
+
+        double phi = stod(str_phi);
+        double psi = stod(str_psi);
+        double omega = stod(str_omega);
+
+        if (omega > 1)
+            omega = 0;
 
         decoded_chromosome.push_back(-180 + phi * 360);
         decoded_chromosome.push_back(-180 + psi * 360);
-        decoded_chromosome.push_back(180);
+        decoded_chromosome.push_back(normalizeAngle(160 + omega * 40, false));
 
         for (size_t chi_idx = 0; chi_idx < residue_chi_num[res_index]; ++chi_idx)
             decoded_chromosome.push_back(0.0);
@@ -80,7 +101,7 @@ vector<double> residueDecoder(vector<double> const& encoded_chromosome) {
 
 vector<double> protein_angles;
 
-vector<double> refineDecoder(vector<double> const& encoded_chromosome) {
+vector<double> refineDecoder(vector<long double> const& encoded_chromosome) {
     vector<double> decoded_chromosome;
     for (size_t res_index = 0; res_index < residue_indexes.size(); ++res_index) {
         double phi_delta = -60 + encoded_chromosome[res_index * 2] * 120;
