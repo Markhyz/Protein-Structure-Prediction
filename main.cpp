@@ -2,184 +2,99 @@
 
 #include <sstream>
 
-string sequence;
-size_t residue_num;
-size_t pose_start;
-
-unique_ptr<core::pose::Pose> pose;
-unique_ptr<core::pose::Pose> fa_pose;
-
-unique_ptr<core::pose::Pose> native_structure;
-unique_ptr<core::pose::Pose> native_structure2;
-
-evo_alg::FitnessFunction<double>::shared_ptr fit_centroid;
-evo_alg::FitnessFunction<double>::shared_ptr fit_fa;
-
-core::scoring::ScoreFunctionOP energy_score_centroid;
-core::scoring::ScoreFunctionOP energy_score_fa;
-
-unique_ptr<core::scoring::dssp::Dssp> dssp_native;
-
 evo_alg::utils::Timer timer;
-
-void rosettaInit(char** rosetta_argv, config_t config) {
-    core::init::init(1, rosetta_argv);
-
-    ifstream fasta_in(config.protein_fasta_path);
-
-    string protein_desc;
-    getline(fasta_in, protein_desc);
-    getline(fasta_in, sequence);
-
-    pose = make_unique<core::pose::Pose>();
-    fa_pose = make_unique<core::pose::Pose>();
-
-    core::pose::make_pose_from_sequence(
-        *pose, sequence,
-        *(core::chemical::ChemicalManager::get_instance()->residue_type_set(core::chemical::CENTROID)));
-
-    core::pose::make_pose_from_sequence(
-        *fa_pose, sequence,
-        *(core::chemical::ChemicalManager::get_instance()->residue_type_set(core::chemical::FA_STANDARD)));
-
-    pose_start = config.pose_start;
-    residue_num = pose->total_residue();
-    for (size_t residue_idx = 1; residue_idx <= residue_num; ++residue_idx)
-        residue_chi_num.push_back(fa_pose->residue(residue_idx).nchi());
-
-    size_t res_index = 0;
-    for (size_t residue_idx = 1; residue_idx <= residue_num; ++residue_idx) {
-        residue_indexes.push_back(res_index);
-        angle_types.push_back(angle_type::phi);
-        angle_types.push_back(angle_type::psi);
-        angle_types.push_back(angle_type::omega);
-
-        pose->set_phi(residue_idx, 0);
-        pose->set_psi(residue_idx, 0);
-        pose->set_omega(residue_idx, 180);
-
-        fa_pose->set_phi(residue_idx, 0);
-        fa_pose->set_psi(residue_idx, 0);
-        fa_pose->set_omega(residue_idx, 180);
-
-        for (size_t chi_idx = 0; chi_idx < residue_chi_num[residue_idx - 1]; ++chi_idx)
-            angle_types.push_back(angle_type::chi);
-
-        res_index += 3 + residue_chi_num[residue_idx - 1];
-    }
-
-    native_structure = make_unique<core::pose::Pose>();
-    native_structure2 = make_unique<core::pose::Pose>();
-
-    core::import_pose::pose_from_file(*native_structure, config.protein_pdb_path, false, core::import_pose::PDB_file);
-
-    core::import_pose::pose_from_file(*native_structure2, config.protein_pdb_path, false, core::import_pose::PDB_file);
-    core::util::switch_to_residue_type_set(*native_structure2, core::chemical::CENTROID);
-
-    dssp_native = make_unique<core::scoring::dssp::Dssp>(*native_structure);
-
-    getSS(config.protein_ss_path);
-    getFragments(config.protein_frag3_path, 3, frag3, frag3_prob);
-    getFragments(config.protein_frag9_path, 9, frag9, frag9_prob);
-    getContactMap(config.protein_cm_path);
-
-    fit_centroid = evo_alg::FitnessFunction<double>::shared_ptr(RosettaCentroidEnergyMOFunction::create(sequence));
-    energy_score_centroid = core::scoring::ScoreFunctionFactory::create_score_function("score3", "score4L");
-    max_energy = energy_score_centroid->score(*pose);
-
-    fit_fa = evo_alg::FitnessFunction<double>::shared_ptr(RosettaFaEnergyFunction::create(sequence));
-    energy_score_fa = core::scoring::ScoreFunctionFactory::create_score_function("ref2015");
-    max_energy_fa = energy_score_fa->score(*fa_pose);
-
-    cout << endl << "Protein: " << endl;
-    cout << protein_desc << endl;
-    cout << sequence << endl << endl;
-
-    cout << "Sec. Struct: " << ss << endl << endl;
-}
 
 string leftPadding(size_t size) {
     return string(size, '.');
 }
 
-void printProteinInfo(vector<double> chromosome, string name) {
+void printProteinInfo(vector<double> chromosome, string name, string sequence, size_t residue_num, size_t pose_start,
+                      core::pose::Pose& fa_pose, core::pose::Pose& pose, core::pose::Pose& native_structure,
+                      core::pose::Pose& native_structure2, evo_alg::FitnessFunction<double>::shared_ptr& fit_fa,
+                      core::scoring::ScoreFunctionOP& energy_score_fa,
+                      core::scoring::ScoreFunctionOP& energy_score_centroid) {
     cout << leftPadding(4) << name << endl << endl;
 
-    if (fa_pose->total_residue() < residue_num) {
+    if (fa_pose.total_residue() < residue_num) {
         core::pose::make_pose_from_sequence(
-            *fa_pose, sequence,
+            fa_pose, sequence,
             *(core::chemical::ChemicalManager::get_instance()->residue_type_set(core::chemical::FA_STANDARD)));
     }
 
     for (size_t residue_idx = 1; residue_idx <= residue_num; ++residue_idx) {
         size_t chromosome_res_idx = residue_indexes[residue_idx - 1];
-        pose->set_phi(residue_idx, chromosome[chromosome_res_idx]);
-        pose->set_psi(residue_idx, chromosome[chromosome_res_idx + 1]);
-        pose->set_omega(residue_idx, chromosome[chromosome_res_idx + 2]);
+        pose.set_phi(residue_idx, chromosome[chromosome_res_idx]);
+        pose.set_psi(residue_idx, chromosome[chromosome_res_idx + 1]);
+        pose.set_omega(residue_idx, chromosome[chromosome_res_idx + 2]);
 
-        fa_pose->set_phi(residue_idx, chromosome[chromosome_res_idx]);
-        fa_pose->set_psi(residue_idx, chromosome[chromosome_res_idx + 1]);
-        fa_pose->set_omega(residue_idx, chromosome[chromosome_res_idx + 2]);
+        fa_pose.set_phi(residue_idx, chromosome[chromosome_res_idx]);
+        fa_pose.set_psi(residue_idx, chromosome[chromosome_res_idx + 1]);
+        fa_pose.set_omega(residue_idx, chromosome[chromosome_res_idx + 2]);
 
         for (size_t chi_idx = 0; chi_idx < residue_chi_num[residue_idx - 1]; ++chi_idx)
-            fa_pose->set_chi(chi_idx + 1, residue_idx, chromosome[chromosome_res_idx + 3 + chi_idx]);
+            fa_pose.set_chi(chi_idx + 1, residue_idx, chromosome[chromosome_res_idx + 3 + chi_idx]);
     }
 
-    auto print_phase = [](string phase) {
+    auto print_phase = [&](string phase) {
         cout << leftPadding(8) << phase << endl << endl;
 
         core::scoring::sasa::SasaCalc sasa_calc;
-        vector<double> scores = dynamic_pointer_cast<RosettaFaEnergyFunction>(fit_fa)->getScores(*fa_pose);
+        vector<double> scores = dynamic_pointer_cast<RosettaFaEnergyFunction>(fit_fa)->getScores(fa_pose);
 
         cout << leftPadding(12) << "Predicted" << endl;
         cout << leftPadding(16) << "FA Energy: " << scores[0] << endl;
-        cout << leftPadding(16) << "Centroid energy: " << energy_score_centroid->score(*pose) << endl;
+        cout << leftPadding(16) << "Centroid energy: " << energy_score_centroid->score(pose) << endl;
         cout << leftPadding(16) << "SS: " << scores[1] << " / " << scores[2] << endl;
         cout << leftPadding(16) << "CM: " << scores[3] << " / " << scores[4] << endl;
-        cout << leftPadding(16) << "SASA: " << sasa_calc.calculate(*fa_pose) << endl << endl;
+        cout << leftPadding(16) << "SASA: " << sasa_calc.calculate(fa_pose) << endl << endl;
 
         if (pose_start - 1 > 0) {
-            fa_pose->delete_residue_range_slow(1, pose_start - 1);
+            fa_pose.delete_residue_range_slow(1, pose_start - 1);
         }
 
-        if (fa_pose->total_residue() > native_structure->total_residue()) {
-            fa_pose->delete_residue_range_slow(native_structure->total_residue() + 1, fa_pose->total_residue());
+        if (fa_pose.total_residue() > native_structure.total_residue()) {
+            fa_pose.delete_residue_range_slow(native_structure.total_residue() + 1, fa_pose.total_residue());
         }
 
-        cout << leftPadding(16) << "AA_RMSD: " << core::scoring::all_atom_rmsd(*fa_pose, *native_structure) << endl;
-        cout << leftPadding(16) << "CA_RMSD: " << core::scoring::CA_rmsd(*fa_pose, *native_structure) << endl;
-        cout << leftPadding(16) << "GDT-TS: " << core::scoring::CA_gdtmm(*fa_pose, *native_structure) << endl << endl;
+        cout << leftPadding(16) << "AA_RMSD: " << core::scoring::all_atom_rmsd(fa_pose, native_structure) << endl;
+        cout << leftPadding(16) << "CA_RMSD: " << core::scoring::CA_rmsd(fa_pose, native_structure) << endl;
+        cout << leftPadding(16) << "GDT-TS: " << core::scoring::CA_gdtmm(fa_pose, native_structure) << endl << endl;
     };
 
     print_phase("Before repack");
 
-    if (fa_pose->total_residue() < residue_num) {
+    if (fa_pose.total_residue() < residue_num) {
         core::pose::make_pose_from_sequence(
-            *fa_pose, sequence,
+            fa_pose, sequence,
             *(core::chemical::ChemicalManager::get_instance()->residue_type_set(core::chemical::FA_STANDARD)));
 
         for (size_t residue_idx = 1; residue_idx <= residue_num; ++residue_idx) {
             size_t chromosome_res_idx = residue_indexes[residue_idx - 1];
-            pose->set_phi(residue_idx, chromosome[chromosome_res_idx]);
-            pose->set_psi(residue_idx, chromosome[chromosome_res_idx + 1]);
-            pose->set_omega(residue_idx, chromosome[chromosome_res_idx + 2]);
+            pose.set_phi(residue_idx, chromosome[chromosome_res_idx]);
+            pose.set_psi(residue_idx, chromosome[chromosome_res_idx + 1]);
+            pose.set_omega(residue_idx, chromosome[chromosome_res_idx + 2]);
 
-            fa_pose->set_phi(residue_idx, chromosome[chromosome_res_idx]);
-            fa_pose->set_psi(residue_idx, chromosome[chromosome_res_idx + 1]);
-            fa_pose->set_omega(residue_idx, chromosome[chromosome_res_idx + 2]);
+            fa_pose.set_phi(residue_idx, chromosome[chromosome_res_idx]);
+            fa_pose.set_psi(residue_idx, chromosome[chromosome_res_idx + 1]);
+            fa_pose.set_omega(residue_idx, chromosome[chromosome_res_idx + 2]);
 
             for (size_t chi_idx = 0; chi_idx < residue_chi_num[residue_idx - 1]; ++chi_idx)
-                fa_pose->set_chi(chi_idx + 1, residue_idx, chromosome[chromosome_res_idx + 3 + chi_idx]);
+                fa_pose.set_chi(chi_idx + 1, residue_idx, chromosome[chromosome_res_idx + 3 + chi_idx]);
         }
     }
 
-    repackProtein(*fa_pose, energy_score_fa);
+    repackProtein(fa_pose, energy_score_fa);
 
     print_phase("After repack");
 }
 
 void outputProteinResults(config_t config, evo_alg::Population<evo_alg::Individual<double>>& population,
-                          string method_name) {
+                          string method_name, string sequence, size_t residue_num, size_t pose_start,
+                          core::pose::Pose& fa_pose, core::pose::Pose& pose, core::pose::Pose& native_structure,
+                          core::pose::Pose& native_structure2, evo_alg::FitnessFunction<double>::shared_ptr& fit_fa,
+                          core::scoring::ScoreFunctionOP& energy_score_fa,
+                          core::scoring::ScoreFunctionOP& energy_score_centroid,
+                          core::scoring::dssp::Dssp& dssp_native) {
     vector<size_t> best_frontier_dirty = population.getBestIndividuals();
     vector<size_t> best_frontier;
     for (size_t index_1 : best_frontier_dirty) {
@@ -202,33 +117,33 @@ void outputProteinResults(config_t config, evo_alg::Population<evo_alg::Individu
         }
     }
 
-    auto set_pose = [](vector<double> chromosome) {
-        if (fa_pose->total_residue() < residue_num) {
+    auto set_pose = [&](vector<double> chromosome) {
+        if (fa_pose.total_residue() < residue_num) {
             core::pose::make_pose_from_sequence(
-                *fa_pose, sequence,
+                fa_pose, sequence,
                 *(core::chemical::ChemicalManager::get_instance()->residue_type_set(core::chemical::FA_STANDARD)));
         }
 
         for (size_t residue_idx = 1; residue_idx <= residue_num; ++residue_idx) {
             size_t chromosome_res_idx = residue_indexes[residue_idx - 1];
-            pose->set_phi(residue_idx, chromosome[chromosome_res_idx]);
-            pose->set_psi(residue_idx, chromosome[chromosome_res_idx + 1]);
-            pose->set_omega(residue_idx, chromosome[chromosome_res_idx + 2]);
+            pose.set_phi(residue_idx, chromosome[chromosome_res_idx]);
+            pose.set_psi(residue_idx, chromosome[chromosome_res_idx + 1]);
+            pose.set_omega(residue_idx, chromosome[chromosome_res_idx + 2]);
 
-            fa_pose->set_phi(residue_idx, chromosome[chromosome_res_idx]);
-            fa_pose->set_psi(residue_idx, chromosome[chromosome_res_idx + 1]);
-            fa_pose->set_omega(residue_idx, chromosome[chromosome_res_idx + 2]);
+            fa_pose.set_phi(residue_idx, chromosome[chromosome_res_idx]);
+            fa_pose.set_psi(residue_idx, chromosome[chromosome_res_idx + 1]);
+            fa_pose.set_omega(residue_idx, chromosome[chromosome_res_idx + 2]);
 
             for (size_t chi_idx = 0; chi_idx < residue_chi_num[residue_idx - 1]; ++chi_idx)
-                fa_pose->set_chi(chi_idx + 1, residue_idx, chromosome[chromosome_res_idx + 3 + chi_idx]);
+                fa_pose.set_chi(chi_idx + 1, residue_idx, chromosome[chromosome_res_idx + 3 + chi_idx]);
         }
 
         if (pose_start - 1 > 0) {
-            fa_pose->delete_residue_range_slow(1, pose_start - 1);
+            fa_pose.delete_residue_range_slow(1, pose_start - 1);
         }
 
-        if (fa_pose->total_residue() > native_structure->total_residue()) {
-            fa_pose->delete_residue_range_slow(native_structure->total_residue() + 1, fa_pose->total_residue());
+        if (fa_pose.total_residue() > native_structure.total_residue()) {
+            fa_pose.delete_residue_range_slow(native_structure.total_residue() + 1, fa_pose.total_residue());
         }
     };
 
@@ -244,11 +159,11 @@ void outputProteinResults(config_t config, evo_alg::Population<evo_alg::Individu
 
         double gdt, rmsd;
 
-        gdt = core::scoring::CA_gdtmm(*fa_pose, *native_structure);
-        rmsd = core::scoring::CA_rmsd(*fa_pose, *native_structure);
+        gdt = core::scoring::CA_gdtmm(fa_pose, native_structure);
+        rmsd = core::scoring::CA_rmsd(fa_pose, native_structure);
 
-        fa_pose->dump_pdb(config.decoy_output_dir + method_name + string("_decoy_") + to_string(ind_index + 1) +
-                          string(".pdb"));
+        fa_pose.dump_pdb(config.decoy_output_dir + method_name + string("_decoy_") + to_string(ind_index + 1) +
+                         string(".pdb"));
 
         mean_gdt += gdt;
         mean_rmsd += rmsd;
@@ -268,26 +183,30 @@ void outputProteinResults(config_t config, evo_alg::Population<evo_alg::Individu
 
     core::scoring::sasa::SasaCalc sasa_calc;
     vector<double> scores_native;
-    if (native_structure->total_residue() == residue_num) {
-        scores_native = dynamic_pointer_cast<RosettaFaEnergyFunction>(fit_fa)->getScores(*native_structure);
+    if (native_structure.total_residue() == residue_num) {
+        scores_native = dynamic_pointer_cast<RosettaFaEnergyFunction>(fit_fa)->getScores(native_structure);
         cout << leftPadding(4) << "Native" << endl;
         cout << leftPadding(8) << "FA Energy: " << scores_native[0] << endl;
-        cout << leftPadding(8) << "Centroid energy: " << energy_score_centroid->score(*native_structure2) << endl;
+        cout << leftPadding(8) << "Centroid energy: " << energy_score_centroid->score(native_structure2) << endl;
         cout << leftPadding(8) << "SS: " << scores_native[1] << " / " << scores_native[2] << endl;
         cout << leftPadding(8) << "CM: " << scores_native[3] << " / " << scores_native[4] << endl;
-        cout << leftPadding(8) << "SASA: " << sasa_calc.calculate(*native_structure) << endl << endl;
+        cout << leftPadding(8) << "SASA: " << sasa_calc.calculate(native_structure) << endl << endl;
     }
 
-    printProteinInfo(population[best_structure_gdt].getChromosome(), "Best GDT_TS");
-    printProteinInfo(population[best_structure_rmsd].getChromosome(), "Best RMSD");
+    printProteinInfo(population[best_structure_gdt].getChromosome(), "Best GDT_TS", sequence, residue_num, pose_start,
+                     fa_pose, pose, native_structure, native_structure2, fit_fa, energy_score_fa,
+                     energy_score_centroid);
+    printProteinInfo(population[best_structure_rmsd].getChromosome(), "Best RMSD", sequence, residue_num, pose_start,
+                     fa_pose, pose, native_structure, native_structure2, fit_fa, energy_score_fa,
+                     energy_score_centroid);
 
     cout << leftPadding(4) << "Mean RMSD: " << mean_rmsd << endl;
     cout << leftPadding(4) << "Mean GDT_TS: " << mean_gdt << endl << endl;
 
-    core::scoring::dssp::Dssp dssp(*fa_pose);
+    core::scoring::dssp::Dssp dssp(fa_pose);
 
     cout << leftPadding(4) << "Secondary structure" << endl;
-    cout << leftPadding(8) << "Native:    " << dssp_native->get_dssp_secstruct() << endl;
+    cout << leftPadding(8) << "Native:    " << dssp_native.get_dssp_secstruct() << endl;
     cout << leftPadding(8) << "Input:     " << ss.substr(pose_start - 1) << endl;
     cout << leftPadding(8) << "Predicted: " << dssp.get_dssp_secstruct() << endl << endl;
 
@@ -301,17 +220,17 @@ void outputProteinResults(config_t config, evo_alg::Population<evo_alg::Individu
 
     gdtts_out << fixed;
     gdtts_out.precision(9);
-    gdtts_out << core::scoring::CA_gdtmm(*fa_pose, *native_structure) << endl;
+    gdtts_out << core::scoring::CA_gdtmm(fa_pose, native_structure) << endl;
 
     set_pose(population[best_structure_rmsd].getChromosome());
 
     ca_rmsd_out << fixed;
     ca_rmsd_out.precision(9);
-    ca_rmsd_out << core::scoring::CA_rmsd(*fa_pose, *native_structure) << endl;
+    ca_rmsd_out << core::scoring::CA_rmsd(fa_pose, native_structure) << endl;
 
     aa_rmsd_out << fixed;
     aa_rmsd_out.precision(9);
-    aa_rmsd_out << core::scoring::all_atom_rmsd(*fa_pose, *native_structure) << endl;
+    aa_rmsd_out << core::scoring::all_atom_rmsd(fa_pose, native_structure) << endl;
 
     mean_rmsd_out << fixed;
     mean_rmsd_out.precision(9);
@@ -393,13 +312,79 @@ int main(int argc, char** argv) {
 
     setConfig(config_file_name, config);
 
-    auto coutbuf = cout.rdbuf();
-    ostringstream oss;
-    if (config.output_level == "none") {
-        cout.rdbuf(oss.rdbuf());
+    core::init::init(1, rosetta_argv);
+
+    ifstream fasta_in(config.protein_fasta_path);
+
+    string sequence;
+    string protein_desc;
+    getline(fasta_in, protein_desc);
+    getline(fasta_in, sequence);
+
+    core::pose::Pose pose, fa_pose;
+
+    core::pose::make_pose_from_sequence(
+        pose, sequence, *(core::chemical::ChemicalManager::get_instance()->residue_type_set(core::chemical::CENTROID)));
+
+    core::pose::make_pose_from_sequence(
+        fa_pose, sequence,
+        *(core::chemical::ChemicalManager::get_instance()->residue_type_set(core::chemical::FA_STANDARD)));
+
+    size_t pose_start = config.pose_start;
+    size_t residue_num = pose.total_residue();
+    for (size_t residue_idx = 1; residue_idx <= residue_num; ++residue_idx)
+        residue_chi_num.push_back(fa_pose.residue(residue_idx).nchi());
+
+    size_t res_index = 0;
+    for (size_t residue_idx = 1; residue_idx <= residue_num; ++residue_idx) {
+        residue_indexes.push_back(res_index);
+        angle_types.push_back(angle_type::phi);
+        angle_types.push_back(angle_type::psi);
+        angle_types.push_back(angle_type::omega);
+
+        pose.set_phi(residue_idx, 0);
+        pose.set_psi(residue_idx, 0);
+        pose.set_omega(residue_idx, 180);
+
+        fa_pose.set_phi(residue_idx, 0);
+        fa_pose.set_psi(residue_idx, 0);
+        fa_pose.set_omega(residue_idx, 180);
+
+        for (size_t chi_idx = 0; chi_idx < residue_chi_num[residue_idx - 1]; ++chi_idx)
+            angle_types.push_back(angle_type::chi);
+
+        res_index += 3 + residue_chi_num[residue_idx - 1];
     }
 
-    rosettaInit(rosetta_argv, config);
+    core::pose::Pose native_structure, native_structure2;
+
+    core::import_pose::pose_from_file(native_structure, config.protein_pdb_path, false, core::import_pose::PDB_file);
+
+    core::import_pose::pose_from_file(native_structure2, config.protein_pdb_path, false, core::import_pose::PDB_file);
+    core::util::switch_to_residue_type_set(native_structure2, core::chemical::CENTROID);
+
+    core::scoring::dssp::Dssp dssp_native(native_structure);
+
+    getSS(config.protein_ss_path);
+    getFragments(config.protein_frag3_path, 3, frag3, frag3_prob);
+    getFragments(config.protein_frag9_path, 9, frag9, frag9_prob);
+    getContactMap(config.protein_cm_path);
+
+    evo_alg::FitnessFunction<double>::shared_ptr fit_centroid(RosettaCentroidEnergyMOFunction::create(sequence));
+    core::scoring::ScoreFunctionOP energy_score_centroid =
+        core::scoring::ScoreFunctionFactory::create_score_function("score3", "score4L");
+    max_energy = energy_score_centroid->score(pose);
+
+    evo_alg::FitnessFunction<double>::shared_ptr fit_fa(RosettaFaEnergyFunction::create(sequence));
+    core::scoring::ScoreFunctionOP energy_score_fa =
+        core::scoring::ScoreFunctionFactory::create_score_function("ref2015");
+    max_energy_fa = energy_score_fa->score(fa_pose);
+
+    cout << endl << "Protein: " << endl;
+    cout << protein_desc << endl;
+    cout << sequence << endl << endl;
+
+    cout << "Sec. Struct: " << ss << endl << endl;
 
     cout.precision(9);
     cout << fixed;
@@ -500,8 +485,11 @@ int main(int argc, char** argv) {
         evo_alg::brkga::runMultiObjective<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(brkga_config);
     timer.stopTimer("res");
 
-    outputProteinResults(config, frag_archive, "frag");
-    outputProteinResults(config, res_archive, "res");
+    outputProteinResults(config, frag_archive, "frag", sequence, residue_num, pose_start, fa_pose, pose,
+                         native_structure, native_structure2, fit_fa, energy_score_fa, energy_score_centroid,
+                         dssp_native);
+    outputProteinResults(config, res_archive, "res", sequence, residue_num, pose_start, fa_pose, pose, native_structure,
+                         native_structure2, fit_fa, energy_score_fa, energy_score_centroid, dssp_native);
 
     setEnergyFunctionLimits(frag_best_frontiers);
     setEnergyFunctionLimits(res_best_frontiers);
@@ -573,8 +561,6 @@ int main(int argc, char** argv) {
 
     ofstream time_out(config.algorithm_output_dir + "total.time");
     time_out << (int)(timer.getTime("frag") + timer.getTime("res")) << endl;
-
-    cout.rdbuf(coutbuf);
 
     return EXIT_SUCCESS;
 }
