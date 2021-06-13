@@ -166,7 +166,7 @@ namespace evo_alg {
 
         std::vector<double> ind_dist(population_.size());
 
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for
         for (size_t index = start; index < end; ++index) {
             for (size_t index2 = index + 1; index2 < end; ++index2) {
                 std::vector<gene_type_t> chromosome_1 = population_[index].getChromosome();
@@ -242,7 +242,7 @@ namespace evo_alg {
 #else
     template <class IndividualType>
     void Population<IndividualType>::evaluateFitness() {
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for
         for (size_t index = 0; index < population_.size(); ++index) {
             population_[index].evaluateFitness();
         }

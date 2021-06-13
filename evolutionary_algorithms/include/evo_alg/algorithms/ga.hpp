@@ -30,7 +30,7 @@ namespace evo_alg {
         std::chrono::time_point<std::chrono::high_resolution_clock> t1, t2, tt1, tt2;
 
         Population<IndividualType> population(pop_size), new_population(pop_size);
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for
         for (size_t index = 0; index < pop_size; ++index) {
             population[index] = {fitness};
             new_population[index] = {fitness};

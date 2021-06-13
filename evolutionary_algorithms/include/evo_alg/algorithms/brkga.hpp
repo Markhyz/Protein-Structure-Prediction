@@ -97,7 +97,7 @@ namespace evo_alg {
             Population<real_individual_t> population(pop_size), new_population(pop_size);
             Population<IndividualType> decoded_population(pop_size);
 
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for
             for (size_t index = 0; index < pop_size; ++index) {
                 population[index] = {brkga_fitness};
                 new_population[index] = {brkga_fitness};
@@ -286,7 +286,7 @@ namespace evo_alg {
 
             std::vector<real_individual_t> best_individuals(pop_size);
 
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for
             for (size_t index = 0; index < pop_size; ++index) {
                 population[index] = {brkga_fitness};
                 new_population[index] = {brkga_fitness};
@@ -294,7 +294,7 @@ namespace evo_alg {
                 decoded_population[index] = {fitness};
             }
 
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for
             for (size_t index = 0; index < archive_size; ++index) {
                 archive[index] = {brkga_fitness};
                 decoded_archive[index] = {fitness};
