@@ -8,26 +8,39 @@ offset=(1 1 1)
 
 mv ./build/$1 $ROSETTA_BUILD_DIR/$1 2>/dev/null
 
-mkdir -p results
-
 for protein_idx in ${!proteins[@]};
 do
     protein_name=${proteins[$protein_idx]}
     protein_offset=${offset[$protein_idx]}
-    result_dir="results/$protein_name"
 
-    mkdir -p $result_dir
-
-    for i in `seq 1 2`;
+    for i in `seq 1 5`;
     do
         cmd="numactl"
-        args="$protein_name $protein_offset $result_dir/ $result_dir/decoys"
         args_list=""
         for j in `seq 1 4`;
         do
-		mkdir -p $result_dir/decoys/$((($i - 1) * 4 + $j))
-	    args_list+="-N $((j - 1)) -m $((j - 1)) $ROSETTA_BUILD_DIR/$1 $args/$((($i - 1) * 4 + $j))/ "
+            result_dir="results_convergence/$protein_name/$((($i - 1) * 4 + $j))"
+
+            mkdir -p $result_dir/scores $result_dir/decoys $result_dir/algorithm $result_dir/graphs
+        
+            echo "
+                FASTA_PATH = proteins/$protein_name/fasta
+                PDB_PATH   = proteins/$protein_name/pdb
+                FRAG3_PATH = proteins/$protein_name/frag3
+                FRAG9_PATH = proteins/$protein_name/frag9
+                SS_PATH    = proteins/$protein_name/ss2
+                CM_PATH    = proteins/$protein_name/con      
+
+                SCORE_OUTPUT_DIR      = $result_dir/scores
+                DECOY_OUTPUT_DIR      = $result_dir/decoys
+                ALGORITHM_OUTPUT_DIR  = $result_dir/algorithm
+
+                ITERATIONS      = 1000
+                POPULATION_SIZE = 500
+            " > predictor_$j.conf
+
+            args_list+="-N $((j - 1)) -m $((j - 1)) $ROSETTA_BUILD_DIR/$1 predictor_$j.conf "
         done
-        printf '%s' "$args_list" | xargs -n 9 -P 4 $cmd
+        printf '%s' "$args_list" | xargs -n 6 -P 4 $cmd
     done
 done
