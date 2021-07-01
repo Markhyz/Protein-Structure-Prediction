@@ -1,8 +1,19 @@
 from statistics import mean, stdev
 import sys
 
-#protein_list = ["1crn", "1gb1", "1hhp", "1i6c", "1vii", "T0868", "T0900"]
-protein_list = ["1acw", "1ail", "1crn", "1enh", "1rop", "1zdd", "2mr9", "2p81"]
+def stats(values, type):
+    return [max(values) if type == 1 else min(values), mean(values) * 100 if type == 1 else mean(values), stdev(values) * 100 if type == 1 else stdev(values)]
+
+protein = sys.argv[1]
+
+def read_external_file(filename):
+    values = []
+    with open(filename) as file:
+        for line in file:
+            line_values = line.split(' ')
+            if line_values[0] == protein:
+                values.append(line_values[1:])
+    return values
 
 def read_file(filename):
     values = []
@@ -10,78 +21,73 @@ def read_file(filename):
         for line in file:
             values.append(float(line))
     return values
-        
-def stats(values):
-    return (mean(values), stdev(values))
 
-for protein in protein_list:
-    #ca_rmsd      = read_file(f"results/{protein}/best_ca_rmsd2")
-    #ca_gdt       = read_file(f"results/{protein}/best_ca_gdt2")
+scores = []
 
-    #mean_rmsd    = read_file(f"results/{protein}/mean_rmsd")
-    #mean_gdt     = read_file(f"results/{protein}/mean_gdt")
+scores.append(read_external_file('statistics/chen2020'))
+scores.append(read_external_file('statistics/narloch2020'))
+scores.append(read_external_file('statistics/song2018'))
+scores.append(read_external_file('statistics/zhang2018'))
 
-    mufold_rmsds  = read_file(f"results/{protein}/mufold_rmsd")
-    mufold_gdts   = read_file(f"results/{protein}/mufold_gdt")
+rosetta_rmsd = read_file(f"statistics/predictor/{protein}/rosetta_rmsd")
+rosetta_gdt  = read_file(f"statistics/predictor/{protein}/rosetta_gdt")
+scores.append(["rosetta"] + stats(rosetta_rmsd, 0) + stats(rosetta_gdt, 1))
 
-    #rosetta_rmsds = read_file(f"results/{protein}/rosetta_rmsd")
-    #rosetta_gdts  = read_file(f"results/{protein}/rosetta_gdt")
+best_rmsd = read_file(f"statistics/predictor/{protein}/best_rmsd")
+best_gdt  = read_file(f"statistics/predictor/{protein}/best_gdt")
+scores.append(["MO-BRKGA (best)"] + stats(best_rmsd, 0) + stats(best_gdt, 1))
 
-    #best_rmsd = min(ca_rmsd)
-    #best_gdt = max(ca_gdt)
+mean_rmsd = read_file(f"statistics/predictor/{protein}/mean_rmsd")
+mean_gdt  = read_file(f"statistics/predictor/{protein}/mean_gdt")
+scores.append(["MO-BRKGA (mean)"] + stats(mean_rmsd, 0) + stats(mean_gdt, 1))
 
-    mufold_rmsd = min(mufold_rmsds)
-    mufold_gdt = max(mufold_gdts)
+mufold_rmsd = read_file(f"statistics/predictor/{protein}/mufold_rmsd")
+mufold_gdt  = read_file(f"statistics/predictor/{protein}/mufold_gdt")
+scores.append(["MO-BRKGA (MUFOLD-CL)"] + stats(mufold_rmsd, 0) + stats(mufold_gdt, 1))
 
-    #rosetta_rmsd = min(rosetta_rmsds)
-    #rosetta_gdt = max(rosetta_gdts)
+scores = list(filter(lambda x: x != [], scores))
 
-    #stat_rmsd = stats(ca_rmsd)
-    #stat_gdt = stats(ca_gdt)
+print("\\begin{table}[ht]")
+print("\\center")
+print("\\caption{", protein.upper(), "prediction comparison}")
+print("\\begin{tabular}{|c|c|c|c|c|}")
+print("\\hline")
+print("\\textbf{Method} & \\textbf{Best RMSD} & \\textbf{Average RMSD} & \\textbf{Best GDT\\_TS} & \\textbf{Average GDT\\_TS} \\\\ \\hline")
 
-    #stat_mean_rmsd = stats(mean_rmsd)
-    #stat_mean_gdt = stats(mean_gdt)
-
-    stat_mufold_rmsd = stats(mufold_rmsds)
-    stat_mufold_gdt = stats(mufold_gdts)
-
-    #stat_rosetta_rmsd = stats(rosetta_rmsds)
-    #stat_rosetta_gdt = stats(rosetta_gdts)
-
-    #print(stat_rosetta_gdt[1])
+for score in scores:
+    print(score)
+    print(score[0], end="")
     
-    #print(mufold_gdt, stat_mufold_gdt[0])
+    if score[1] != "-":
+        print("& {:.1f}".format(float(score[1])), end="")
+    else:
+        print("& -", end="")
 
-    #print("PROTEIN BEST_RMSD BEST_GDT MEAN_RMSD MEAN_GDT MUFOLD_RMSD MUFOLD_GDT MEAN_MU_RMSD MEAN_MU_GDT ROSETTA_RMSD ROSETTA_GDT MEAN_R_RMSD MEAN_R_GDT")
-    #print(protein.upper(), ": {:.3f} {:.3f} {:.3f}/{:.3f} {:.3f}/{:.3f} {:.3f}/{:.3f} {:.3f}/{:.3f} {:.3f} {:.3f} {:.3f}/{:.3f} {:.3f}/{:.3f} {:.3f} {:.3f} {:.3f}/{:.3f} {:.3f}/{:.3f}".format( 
-     #     best_rmsd,
-     #     best_gdt,
-     #     stat_rmsd[0],
-     #     stat_rmsd[1],
-     #    stat_gdt[0],
-     #     stat_gdt[1],
-     #     stat_mean_rmsd[0],
-     #     stat_mean_rmsd[1],
-     #     stat_mean_gdt[0],
-     #     stat_mean_gdt[1],
-     #     mufold_rmsd,
-     #     mufold_gdt,
-     #     stat_mufold_rmsd[0],
-     #     stat_mufold_rmsd[1],
-     #     stat_mufold_gdt[0],
-     #     stat_mufold_gdt[1],
-     #     rosetta_rmsd,
-     #     rosetta_gdt,
-     #     stat_rosetta_rmsd[0],
-     #     stat_rosetta_rmsd[1],
-     #     stat_rosetta_gdt[0],
-     #     stat_rosetta_gdt[1]))
+    if score[2] != "-":
+        if score[3] != "-":
+            print("& {:.1f} $\\pm$ {:.1f}".format(score[2], score[3]), end="")
+        else:
+            print("& {:.1f}".format(score[2]), end="")
+    else:
+        print("& -", end="")
 
-    print("PROTEIN MUFOLD_RMSD MUFOLD_GDT MEAN_MU_RMSD MEAN_MU_GDT")
-    print(protein.upper(), ": {:.2f} {:.2f} {:.2f}/{:.2f} {:.2f}/{:.2f}".format( 
-          mufold_rmsd,
-          mufold_gdt,
-          stat_mufold_rmsd[0],
-          stat_mufold_rmsd[1],
-          stat_mufold_gdt[0],
-          stat_mufold_gdt[1]))
+    if score[4] != "-":
+        print("& {:.1f}".format(float(score[4])), end="")
+    else:
+        print("& -", end="")
+
+    if score[5] != "-":
+        if score[6] != "-":
+            print("& {:.1f} $\\pm$ {:.1f}".format(score[5], score[6]), end="")
+        else:
+            print("& {:.1f}".format(score[5]), end="")
+    else:
+        print("& -", end="")
+    
+    print("\\\\ \\hline")
+
+print("\\end{tabular}")
+print("\\label{tab:", protein, "_pred}")
+print("\\end{table}")
+
+
