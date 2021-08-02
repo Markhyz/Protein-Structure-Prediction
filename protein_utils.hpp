@@ -2,13 +2,12 @@
 #define GUARD_H_PROTEIN_COMMONS
 
 #include "rosetta.hpp"
-#include "utils.hpp"
 
+#include <evo_alg/commons/utils.hpp>
 #include <evo_alg/core.hpp>
 #include <evo_alg/operators.hpp>
 
-#include <iomanip>
-#include <memory>
+#include "utils.hpp"
 
 namespace angle_type {
     constexpr uint8_t phi = 1;
@@ -112,7 +111,7 @@ void getFragments(string frag_path, size_t frag_size, frag_list_t& frag_list, ve
                 if (res_ss == "E")
                     frag_prob += sqrt(ss_prob[res_index + index2][2]);
 
-                frag.push_back({fix_angle(phi), fix_angle(psi), fix_angle(omega)});
+                frag.push_back({fix_angle(phi), fix_angle(psi), 180});
             }
             getline(frag_in, line);
             frags.push_back(frag);
@@ -238,7 +237,7 @@ pair<double, double> cmScore(core::pose::Pose const& pose) {
     return {cm_score, cm_total};
 }
 
-void setEnergyFunctionLimits(vector<tuple<vector<vector<double>>, evo_alg::fitness::frontier_t>>& best_frontiers) {
+void setEnergyFunctionLimits(vector<tuple<vector<vector<long double>>, evo_alg::fitness::frontier_t>>& best_frontiers) {
     for (auto& best_frontier : best_frontiers) {
         evo_alg::fitness::frontier_t fitness = get<1>(best_frontier);
         for (auto& fit_values : fitness) {

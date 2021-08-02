@@ -8,7 +8,7 @@
 #include "core/population.hpp"
 
 namespace evo_alg {
-    using real_gene_t = double;
+    using real_gene_t = long double;
     using integer_gene_t = int;
     using binary_gene_t = bool;
 

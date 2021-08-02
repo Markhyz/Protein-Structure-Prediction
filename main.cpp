@@ -264,26 +264,10 @@ void outputFitness(config_t config, string output_file_name, evo_alg::fitness::f
 }
 
 void outputAlgorithmResults(config_t config,
-                            vector<tuple<vector<vector<double>>, evo_alg::fitness::frontier_t>>& best_frontiers,
+                            vector<tuple<vector<vector<long double>>, evo_alg::fitness::frontier_t>>& best_frontiers,
                             vector<double>& diversity, string method_name) {
     for (size_t index = 0; index < best_frontiers.size(); ++index) {
-
-        ofstream chromosome_out(config.algorithm_output_dir + method_name + "_gen_" + to_string(index + 1) +
-                                string(".chromosome"));
-
-        vector<vector<double>> chromosomes;
-        evo_alg::fitness::frontier_t best_frontier;
-        tie(chromosomes, best_frontier) = best_frontiers[index];
-
-        chromosome_out << fixed;
-        chromosome_out.precision(18);
-        for (auto chromosome : chromosomes) {
-            chromosome_out << chromosome[0];
-            for (size_t i = 1; i < chromosome.size(); ++i)
-                chromosome_out << " " << chromosome[i];
-            chromosome_out << endl;
-        }
-
+        evo_alg::fitness::frontier_t best_frontier = get<1>(best_frontiers[index]);
         string fitness_file_name = method_name + "_gen_" + to_string(index + 1);
         outputFitness(config, fitness_file_name, best_frontier);
     }
@@ -306,6 +290,8 @@ int main(int argc, char** argv) {
 
         return EXIT_FAILURE;
     }
+
+    evo_alg::utils::setSeedRNG(12345);
 
     string config_file_name = argv[1];
     config_t config;
@@ -390,7 +376,7 @@ int main(int argc, char** argv) {
     cout << fixed;
 
     evo_alg::Population<evo_alg::Individual<double>> frag_pop, frag_archive, res_pop, res_archive;
-    vector<tuple<vector<vector<double>>, evo_alg::fitness::frontier_t>> frag_best_frontiers, res_best_frontiers;
+    vector<tuple<vector<vector<long double>>, evo_alg::fitness::frontier_t>> frag_best_frontiers, res_best_frontiers;
     vector<double> frag_diversity, res_diversity;
     vector<size_t> best_individuals;
     evo_alg::fitness::frontier_t best_frontier;
@@ -428,19 +414,20 @@ int main(int argc, char** argv) {
         evo_alg::brkga::runMultiObjective<evo_alg::Individual<double>, evo_alg::FitnessFunction<double>>(brkga_config);
     timer.stopTimer("frag");
 
-    vector<vector<double>> initial_pop;
+    vector<vector<long double>> initial_pop;
 
     evo_alg::Population<evo_alg::Individual<double>> transcoded_pop;
     evo_alg::Population<evo_alg::Individual<double>> rough_pop;
     for (size_t ind_index = 0; ind_index < min(frag_archive.getSize(), frag_pop.getSize()); ++ind_index) {
         vector<double> chromosome = frag_archive[ind_index].getChromosome();
-        vector<double> coded_chromosome;
+        vector<long double> coded_chromosome;
         for (size_t res_index = 0; res_index < residue_num; ++res_index) {
             size_t chromosome_res_idx = residue_indexes[res_index];
-            double coded_phi = trunc((chromosome[chromosome_res_idx] + 180) / 360 * 1e7);
-            double coded_psi = trunc((chromosome[chromosome_res_idx + 1] + 180) / 360 * 1e7);
+            uint64_t k = 1e9;
+            uint64_t coded_phi = trunc((chromosome[chromosome_res_idx] + 180) / 360 * k);
+            uint64_t coded_psi = trunc((chromosome[chromosome_res_idx + 1] + 180) / 360 * k);
 
-            double coded_residue = (coded_phi * 1e7 + coded_psi) / 1e14;
+            long double coded_residue = (coded_phi * k + coded_psi) / 1e18;
 
             coded_chromosome.push_back(coded_residue);
         }
@@ -452,7 +439,7 @@ int main(int argc, char** argv) {
 
         for (size_t index = 0; index < chromosome.size(); ++index) {
             if (angle_types[index] != angle_type::omega &&
-                !evo_alg::utils::numericEqual(chromosome[index], chromosome_2[index], 1e-2)) {
+                !evo_alg::utils::numericEqual(chromosome[index], chromosome_2[index], 1e-4)) {
                 double gene_1 = chromosome[index];
                 double gene_2 = chromosome_2[index];
                 if (gene_1 < 0 && gene_2 > 0) {
@@ -461,7 +448,7 @@ int main(int argc, char** argv) {
                 if (gene_1 > 0 && gene_2 < 0) {
                     gene_2 += 360;
                 }
-                if (!evo_alg::utils::numericEqual(gene_1, gene_2, 1e-2)) {
+                if (!evo_alg::utils::numericEqual(gene_1, gene_2, 1e-4)) {
                     cout << "mapping error" << endl;
                     cout << index << " " << (int)angle_types[index] << endl;
                     cout << gene_1 << " " << gene_2 << endl;

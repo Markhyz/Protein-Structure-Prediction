@@ -1,7 +1,8 @@
-#include "protein_brkga.hpp"
-
 #include <fstream>
-#include <iostream>
+#include <iomanip>
+#include <memory>
+#include <string>
+#include <vector>
 
 using namespace std;
 

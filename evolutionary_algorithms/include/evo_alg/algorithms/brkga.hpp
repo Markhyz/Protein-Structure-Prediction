@@ -13,14 +13,14 @@
 
 namespace evo_alg {
     namespace brkga {
-        using decoding_function_t = std::function<std::vector<double>(std::vector<double> const&)>;
+        using decoding_function_t = std::function<std::vector<double>(real_chromosome_t const&)>;
 
         template <class FitnessType>
-        class BrkgaFitness : public FitnessFunction<double> {
+        class BrkgaFitness : public FitnessFunction<real_gene_t> {
           public:
             BrkgaFitness(size_t chromosome_size, typename FitnessType::const_shared_ptr fitness,
                          decoding_function_t decoder)
-                : FitnessFunction<double>({chromosome_size, {0, 1}}), chromosome_size_(chromosome_size),
+                : FitnessFunction<real_gene_t>({chromosome_size, {0, 1}}), chromosome_size_(chromosome_size),
                   fitness_(fitness->clone()), decoder_(decoder), dimension_(fitness->getDimension()){};
 
             size_t getDimension() const override {
@@ -31,8 +31,8 @@ namespace evo_alg {
                 return new BrkgaFitness(chromosome_size_, fitness_, decoder_);
             }
 
-            fitness::FitnessValue operator()(evo_alg::Genotype<double> const& genotype) override {
-                std::vector<double> encoded_chromosome = genotype.getChromosome();
+            fitness::FitnessValue operator()(evo_alg::Genotype<real_gene_t> const& genotype) override {
+                real_chromosome_t encoded_chromosome = genotype.getChromosome();
 
                 fitness::FitnessValue result = (*fitness_)({decoder_(encoded_chromosome)});
 
@@ -68,7 +68,7 @@ namespace evo_alg {
             double diversity_threshold = 0.0;
             double diversity_enforcement = 1.0;
             double convergence_threshold = NAN;
-            std::vector<std::vector<double>> initial_pop;
+            std::vector<real_chromosome_t> initial_pop;
             std::function<void(config_t&, size_t)> update_fn;
         };
 
@@ -80,9 +80,9 @@ namespace evo_alg {
             size_t const chromosome_size = config.chromosome_size;
             typename FitnessType::const_shared_ptr const fitness = config.fitness;
             decoding_function_t decoder = config.decoder;
-            std::vector<std::vector<double>> const& initial_pop = config.initial_pop;
+            std::vector<real_chromosome_t> const& initial_pop = config.initial_pop;
 
-            FitnessFunction<double>::shared_ptr brkga_fitness(
+            FitnessFunction<real_gene_t>::shared_ptr brkga_fitness(
                 new BrkgaFitness<FitnessType>(chromosome_size, fitness, decoder));
 
             size_t elite_size = (size_t)((double) pop_size * config.elite_fraction);
@@ -164,8 +164,8 @@ namespace evo_alg {
                     size_t const elite_parent = diversified_individuals[elite_dist(utils::rng)];
                     size_t const non_elite_parent = diversified_individuals[non_elite_dist(utils::rng)];
 
-                    recombinator::eliteUniform<double>(population[elite_parent], population[non_elite_parent], child,
-                                                       config.elite_cross_pr);
+                    recombinator::eliteUniform<real_gene_t>(population[elite_parent], population[non_elite_parent],
+                                                            child, config.elite_cross_pr);
 
                     new_population[mut_size + elite_size + index].setChromosome(child.getChromosome());
                 }
@@ -228,7 +228,7 @@ namespace evo_alg {
 
         template <class PopulationType>
         void updateArchive(PopulationType const& pop, PopulationType& archive, size_t& archive_current_size) {
-            std::vector<std::vector<double>> total_chromosomes;
+            std::vector<real_chromosome_t> total_chromosomes;
             std::vector<fitness::FitnessValue> total_fitness_values;
 
             for (size_t index = 0; index < pop.getSize(); ++index) {
@@ -262,7 +262,7 @@ namespace evo_alg {
 
         template <class IndividualType, class FitnessType>
         std::tuple<Population<IndividualType>, Population<IndividualType>,
-                   std::vector<std::tuple<std::vector<std::vector<double>>, fitness::frontier_t>>, std::vector<double>>
+                   std::vector<std::tuple<std::vector<real_chromosome_t>, fitness::frontier_t>>, std::vector<double>>
         runMultiObjective(config_t<FitnessType> config) {
             utils::Timer timer;
 
@@ -272,9 +272,9 @@ namespace evo_alg {
             size_t const chromosome_size = config.chromosome_size;
             typename FitnessType::const_shared_ptr const fitness = config.fitness;
             decoding_function_t decoder = config.decoder;
-            std::vector<std::vector<double>> const& initial_pop = config.initial_pop;
+            std::vector<real_chromosome_t> const& initial_pop = config.initial_pop;
 
-            FitnessFunction<double>::shared_ptr brkga_fitness(
+            FitnessFunction<real_gene_t>::shared_ptr brkga_fitness(
                 new BrkgaFitness<FitnessType>(chromosome_size, fitness, decoder));
 
             size_t elite_size = (size_t)((double) pop_size * config.elite_fraction);
@@ -315,12 +315,12 @@ namespace evo_alg {
 
             updateArchive(population, archive, archive_current_size);
 
-            std::vector<std::tuple<std::vector<std::vector<double>>, fitness::frontier_t>> best_frontiers;
+            std::vector<std::tuple<std::vector<real_chromosome_t>, fitness::frontier_t>> best_frontiers;
             std::vector<double> diversity;
 
             std::vector<size_t> best_individuals_index = archive.getBestIndividuals();
             fitness::frontier_t best_frontier;
-            vector<vector<double>> best_individuals_chromosome;
+            vector<real_chromosome_t> best_individuals_chromosome;
             for (size_t ind : best_individuals_index) {
                 best_frontier.push_back(archive[ind].getFitnessValue());
                 best_individuals_chromosome.push_back(archive[ind].getChromosome());
@@ -381,8 +381,8 @@ namespace evo_alg {
                     size_t const elite_parent = diversified_individuals[elite_dist(utils::rng)];
                     size_t const non_elite_parent = diversified_individuals[non_elite_dist(utils::rng)];
 
-                    recombinator::eliteUniform<double>(population[elite_parent], population[non_elite_parent], child,
-                                                       config.elite_cross_pr);
+                    recombinator::eliteUniform<real_gene_t>(population[elite_parent], population[non_elite_parent],
+                                                            child, config.elite_cross_pr);
 
                     new_population[mut_size + elite_size + index].setChromosome(child.getChromosome());
                 }

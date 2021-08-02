@@ -5,7 +5,7 @@
 
 #include <evo_alg/algorithms/brkga.hpp>
 
-vector<double> frag3Decoder(vector<double> const& encoded_chromosome) {
+vector<double> frag3Decoder(vector<long double> const& encoded_chromosome) {
     vector<double> decoded_chromosome(angle_types.size());
     for (size_t gene_index = 0; gene_index < encoded_chromosome.size(); ++gene_index) {
         size_t res_index = gene_index * 3;
@@ -25,7 +25,7 @@ vector<double> frag3Decoder(vector<double> const& encoded_chromosome) {
     return decoded_chromosome;
 }
 
-vector<double> frag9Decoder(vector<double> const& encoded_chromosome) {
+vector<double> frag9Decoder(vector<long double> const& encoded_chromosome) {
     vector<double> decoded_chromosome(angle_types.size());
     for (size_t gene_index = 0; gene_index < encoded_chromosome.size(); ++gene_index) {
         size_t res_index = gene_index * 9;
@@ -59,12 +59,12 @@ vector<double> angleDecoder(vector<double> const& encoded_chromosome) {
     return decoded_chromosome;
 }
 
-vector<double> residueDecoder(vector<double> const& encoded_chromosome) {
+vector<double> residueDecoder(vector<long double> const& encoded_chromosome) {
     vector<double> decoded_chromosome;
     for (size_t res_index = 0; res_index < residue_indexes.size(); ++res_index) {
         double gene = encoded_chromosome[res_index];
-        double phi = trunc(gene * 1e7) / 1e7;
-        gene = (gene * 1e7 - trunc(gene * 1e7));
+        double phi = trunc(gene * 1e9) / 1e9;
+        gene = (gene * 1e9 - trunc(gene * 1e9));
         double psi = trunc(gene * 1e7) / 1e7;
 
         decoded_chromosome.push_back(-180 + phi * 360);

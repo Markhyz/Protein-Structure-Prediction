@@ -9,7 +9,7 @@ namespace evo_alg {
         void polynomial(real_individual_t& individual, double const pr, uint32_t const n) {
             real_chromosome_t individual_chromosome = individual.getChromosome();
             real_chromosome_t mutated_chromosome = individual_chromosome;
-            std::vector<std::pair<double, double>> bounds = individual.getBounds();
+            std::vector<std::pair<real_gene_t, real_gene_t>> bounds = individual.getBounds();
             for (size_t index = 0; index < mutated_chromosome.size(); ++index) {
                 double const cur_pr = utils::uniformProbGen();
                 if (cur_pr < pr) {

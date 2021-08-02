@@ -15,6 +15,8 @@ namespace evo_alg {
 
         extern int mpi_size, mpi_rank;
 
+        void setSeedRNG(uint64_t seed);
+
         double uniformProbGen();
 
         void initMPI(int const size, int const rank);

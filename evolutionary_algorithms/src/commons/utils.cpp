@@ -7,6 +7,10 @@ namespace evo_alg {
 
         int mpi_size = 1, mpi_rank = 1;
 
+        void setSeedRNG(uint64_t seed) {
+            rng.seed(seed);
+        }
+
         double uniformProbGen() {
             std::uniform_real_distribution<double> uniform_dist(0, 1);
             return uniform_dist(rng);
