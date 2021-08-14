@@ -1,0 +1,3 @@
+[submodule "evolutionary_algorithms"]
+	path = evolutionary_algorithms
+	url = git@github.com:Markhyz/evolutionary-algorithms.git
