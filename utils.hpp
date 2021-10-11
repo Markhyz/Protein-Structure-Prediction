@@ -123,7 +123,7 @@ void readConfigFile(string config_file_name, map<string, string>& config_values)
                 token = "";
                 break;
             } else {
-                token += tolower(c);
+                token += c;
             }
         }
         if (!token.empty()) {
@@ -135,7 +135,10 @@ void readConfigFile(string config_file_name, map<string, string>& config_values)
 
                 exit(EXIT_FAILURE);
             }
-            config_values[tokens[0]] = tokens[2];
+            string key;
+            for (char c : tokens[0])
+                key += tolower(c);
+            config_values[key] = tokens[2];
         }
     }
 }
