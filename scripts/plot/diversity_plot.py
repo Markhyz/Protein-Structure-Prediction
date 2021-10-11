@@ -2,8 +2,6 @@ import sys
 import matplotlib
 import matplotlib.pyplot as plt
 
-matplotlib.use('GTK3Agg')
-
 output_file = sys.argv[1]
 data_file = sys.argv[2]
 graph_title = sys.argv[3]

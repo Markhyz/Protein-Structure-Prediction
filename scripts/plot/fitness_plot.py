@@ -2,7 +2,7 @@ import sys
 import matplotlib
 import matplotlib.pyplot as plt
 
-matplotlib.use('GTK3Agg')
+#matplotlib.use('GTK3Agg')
 
 output_file = sys.argv[1]
 graph_title = sys.argv[2]
@@ -47,12 +47,10 @@ plt.clim(0, 1)
 color_bar = plt.colorbar()
 color_bar.set_label("Energy Function", labelpad=10)
 
-legend = plt.legend()
-
 # fig = plt.figure()
 # ax = fig.add_subplot(projection='3d')
 
 # for fitness in fitness_data:
 #     ax.scatter(fitness[1], fitness[2], fitness[0])
 
-plt.savefig(output_file, format='png', dpi=1200)
+plt.savefig(output_file, format='pdf', dpi=1200)

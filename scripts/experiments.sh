@@ -3,8 +3,10 @@
 #OMP_PLACES=cores OMP_NUM_THREADS=10 numactl -N 1 -m 1 ./run.sh mobrkga_main 1hhp 1 ./ results/decoys_2/
 #OMP_PROC_BIND=close OMP_PLACES=cores OMP_NUM_THREADS=4 ./run.sh mobrkga_main T0868 46 ./ results/decoys/
 
-proteins=(1zdd 1enh 2mr9)
-offset=(1 1 1)
+#proteins=(1ab1 1acw 1ail 1aly 1bdd 1crn 1dfn 1enh 1gb1 1hhp 1i6c 1rop 1zdd 2kdl 2mr9 2p81 T0868 T0900 T0968s1 T1010)
+proteins=(T0868 T0900 T0968s1 T1010)
+#offset=(1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 46 5 6 1)
+offset=(46 5 6 1)
 
 mv ./build/$1 $ROSETTA_BUILD_DIR/$1 2>/dev/null
 
@@ -19,7 +21,7 @@ do
         args_list=""
         for j in `seq 1 4`;
         do
-            result_dir="results_convergence/$protein_name/$((($i - 1) * 4 + $j))"
+            result_dir="results_predictor/$protein_name/$((($i - 1) * 4 + $j))"
 
             mkdir -p $result_dir/scores $result_dir/decoys $result_dir/algorithm $result_dir/graphs
         
@@ -34,6 +36,8 @@ do
                 SCORE_OUTPUT_DIR      = $result_dir/scores
                 DECOY_OUTPUT_DIR      = $result_dir/decoys
                 ALGORITHM_OUTPUT_DIR  = $result_dir/algorithm
+
+                PROTEIN_OFFSET = $protein_offset
 
                 ITERATIONS      = 1000
                 POPULATION_SIZE = 500
