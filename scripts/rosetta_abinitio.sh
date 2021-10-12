@@ -5,8 +5,8 @@ main_dir=~/psp
 protein=$1
 it=$2
 
-mkdir -p $main_dir/results/$protein/rosetta
-cd $main_dir/results/$protein/rosetta
+mkdir -p $main_dir/results_predictor/rosetta/$protein
+cd $main_dir/results_predictor/rosetta/$protein
 
 mkdir -p tmp_$it
 cd tmp_$it
