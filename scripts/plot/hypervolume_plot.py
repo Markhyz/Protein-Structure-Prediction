@@ -2,10 +2,11 @@ import sys
 import matplotlib
 import matplotlib.pyplot as plt
 
+#matplotlib.use('GTK3Agg')
+
 output_file = sys.argv[1]
 graph_title = sys.argv[2]
 data_files = sys.argv[3:]
-
 
 def read_file(filename):
     values = []
@@ -15,7 +16,6 @@ def read_file(filename):
             line_values = line.split()
             values.append([int(line_values[0]), float(line_values[1])])
     return values
-
 
 hypervolumes = []
 for file in data_files:
@@ -31,7 +31,7 @@ for hv in hypervolumes:
         hypervolumes_y.append(value)
         cnt += 1
 
-plt.rc("axes", axisbelow=True)
+plt.rc('axes', axisbelow=True)
 
 plt.title(graph_title)
 plt.xlabel("Generations", labelpad=5)
