@@ -19,11 +19,12 @@ struct config_t {
 
     size_t iteration_num;
     size_t population_size;
-    double elite_fraction = 0.5;
-    double mutant_fraction = 0.2;
-    double crossover_prob = 0.55;
-    double diversity_threshold = 0.2;
-    double diversity_enforcement = 0.5;
+
+    double ss_w_coil;
+    double ss_w_helix;
+    double ss_w_sheet;
+
+    string frag_type;
 
     size_t pose_start = 1;
 
@@ -45,52 +46,34 @@ void setConfigValue(config_t& config, map<string, string>& config_values, string
     } else {
         if (value_name == "fasta_path") {
             config.protein_fasta_path = value;
-
         } else if (value_name == "pdb_path") {
             config.protein_pdb_path = value;
-
         } else if (value_name == "frag3_path") {
             config.protein_frag3_path = value;
-
         } else if (value_name == "frag9_path") {
             config.protein_frag9_path = value;
-
         } else if (value_name == "ss_path") {
             config.protein_ss_path = value;
-
         } else if (value_name == "cm_path") {
             config.protein_cm_path = value;
-
         } else if (value_name == "score_output_dir") {
             config.score_output_dir = normalizeDirPath(value);
-
         } else if (value_name == "decoy_output_dir") {
             config.decoy_output_dir = normalizeDirPath(value);
-
         } else if (value_name == "algorithm_output_dir") {
             config.algorithm_output_dir = normalizeDirPath(value);
-
         } else if (value_name == "iterations") {
             config.iteration_num = stoul(value);
-
         } else if (value_name == "population_size") {
             config.population_size = stoul(value);
-
-        } else if (value_name == "elite_fraction") {
-            config.elite_fraction = stod(value);
-
-        } else if (value_name == "mutant_fraction") {
-            config.mutant_fraction = stod(value);
-
-        } else if (value_name == "crossover_prob") {
-            config.crossover_prob = stod(value);
-
-        } else if (value_name == "diversity_threshold") {
-            config.diversity_threshold = stod(value);
-
-        } else if (value_name == "diversity_enforcement") {
-            config.diversity_enforcement = stod(value);
-
+        } else if (value_name == "ss_coil_weight") {
+            config.ss_w_coil = stod(value);
+        } else if (value_name == "ss_helix_weight") {
+            config.ss_w_helix = stod(value);
+        } else if (value_name == "ss_sheet_weight") {
+            config.ss_w_sheet = stod(value);
+        } else if (value_name == "frag_type") {
+            config.frag_type = value;
         } else if (value_name == "protein_offset") {
             config.pose_start = stoul(value);
         } else if (value_name == "output_level") {
@@ -160,11 +143,10 @@ void setConfig(string config_file_name, config_t& config) {
     setConfigValue(config, config_values, "algorithm_output_dir", true);
     setConfigValue(config, config_values, "iterations", true);
     setConfigValue(config, config_values, "population_size", true);
-    setConfigValue(config, config_values, "elite_fraction", false);
-    setConfigValue(config, config_values, "mutant_fraction", false);
-    setConfigValue(config, config_values, "crossover_prob", false);
-    setConfigValue(config, config_values, "diversity_threshold", false);
-    setConfigValue(config, config_values, "diversity_enforcement", false);
+    setConfigValue(config, config_values, "ss_coil_weight", false);
+    setConfigValue(config, config_values, "ss_helix_weight", false);
+    setConfigValue(config, config_values, "ss_sheet_weight", false);
+    setConfigValue(config, config_values, "frag_type", false);
     setConfigValue(config, config_values, "protein_offset", false);
     setConfigValue(config, config_values, "output_level", false);
 }

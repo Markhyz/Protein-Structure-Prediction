@@ -251,12 +251,12 @@ void outputFitness(config_t config, string output_file_name, evo_alg::fitness::f
     normalized_fitness_out.precision(9);
     for (auto fitness : frontier) {
         vector<double> values = fitness.getValues();
-        double energy_value = -values[0];
-        double ss_value = values[1];
-        double cm_value = values[2];
+        double ss_value = values[0];
+        double cm_value = values[1];
+        double energy_value = -values[2];
         fitness_out << energy_value << " " << ss_value << " " << cm_value << endl;
 
-        double norm_energy_value = (energy_value - energy_min) / (energy_max - energy_min);
+        double norm_energy_value = max(0.0, min(1.0, (energy_value - energy_min) / (energy_max - energy_min)));
         double norm_ss_value = ss_value / ss_total;
         double norm_cm_value = cm_value / cm_total;
         normalized_fitness_out << norm_energy_value << " " << norm_ss_value << " " << norm_cm_value << endl;
@@ -317,7 +317,7 @@ int main(int argc, char** argv) {
         *(core::chemical::ChemicalManager::get_instance()->residue_type_set(core::chemical::FA_STANDARD)));
 
     size_t pose_start = config.pose_start;
-    size_t residue_num = pose.total_residue();
+    residue_num = pose.total_residue();
     for (size_t residue_idx = 1; residue_idx <= residue_num; ++residue_idx)
         residue_chi_num.push_back(fa_pose.residue(residue_idx).nchi());
 
@@ -351,9 +351,19 @@ int main(int argc, char** argv) {
 
     core::scoring::dssp::Dssp dssp_native(native_structure);
 
+    if (config.ss_w_coil) {
+        ss_w_coil = config.ss_w_coil;
+    }
+    if (config.ss_w_helix) {
+        ss_w_helix = config.ss_w_helix;
+    }
+    if (config.ss_w_sheet) {
+        ss_w_sheet = config.ss_w_sheet;
+    }
+
+    getFragments(config.protein_frag3_path, 3, frag3);
+    getFragments(config.protein_frag9_path, 9, frag9);
     getSS(config.protein_ss_path);
-    getFragments(config.protein_frag3_path, 3, frag3, frag3_prob);
-    getFragments(config.protein_frag9_path, 9, frag9, frag9_prob);
     getContactMap(config.protein_cm_path);
 
     evo_alg::FitnessFunction<double>::shared_ptr fit_centroid(RosettaCentroidEnergyMOFunction::create(sequence));
@@ -387,27 +397,18 @@ int main(int argc, char** argv) {
 
     size_t iteration_num = config.iteration_num;
     size_t pop_size = config.population_size;
-    double elite_x = config.elite_fraction;
-    double mut_x = config.mutant_fraction;
-    double cr_x = config.crossover_prob;
-    double diversity_threshold = config.diversity_threshold;
-    double diversity_enforcement = config.diversity_enforcement;
 
-    auto update_fn = [&](evo_alg::brkga::config_t<evo_alg::FitnessFunction<double>>& config, size_t it) {
-        if (it > iteration_num / 2) {
-            double progress = 2 * (2.0 * it / (double)iteration_num - 1);
+    evo_alg::brkga::config_t<evo_alg::FitnessFunction<double>> brkga_config;
 
-            config.diversity_enforcement = max(0.0, diversity_enforcement * (1 - progress));
-        }
-    };
-
-    evo_alg::brkga::config_t<evo_alg::FitnessFunction<double>> brkga_config(
-        iteration_num, pop_size, frag9_chromosome_size, elite_x, mut_x, cr_x, fit_centroid, frag9Decoder);
+    if (config.frag_type == "frag3") {
+        brkga_config = evo_alg::brkga::config_t<evo_alg::FitnessFunction<double>>(
+            iteration_num, pop_size, frag3_chromosome_size, fit_centroid, frag3Decoder);
+    } else if (config.frag_type == "frag9") {
+        brkga_config = evo_alg::brkga::config_t<evo_alg::FitnessFunction<double>>(
+            iteration_num, pop_size, frag9_chromosome_size, fit_centroid, frag9Decoder);
+    }
 
     brkga_config.log_step = config.output_level == "none" ? 0 : 1;
-    brkga_config.diversity_threshold = diversity_threshold;
-    brkga_config.diversity_enforcement = diversity_enforcement;
-    brkga_config.update_fn = update_fn;
 
     timer.startTimer("frag");
     tie(frag_pop, frag_archive, frag_best_frontiers, frag_diversity) =
@@ -464,6 +465,7 @@ int main(int argc, char** argv) {
     }
 
     brkga_config.chromosome_size = residue_chromosome_size;
+    brkga_config.exploration_diversity = 0.25;
     brkga_config.decoder = residueDecoder;
     brkga_config.initial_pop = initial_pop;
 
@@ -477,9 +479,6 @@ int main(int argc, char** argv) {
                          dssp_native);
     outputProteinResults(config, res_archive, "res", sequence, residue_num, pose_start, fa_pose, pose, native_structure,
                          native_structure2, fit_fa, energy_score_fa, energy_score_centroid, dssp_native);
-
-    setEnergyFunctionLimits(frag_best_frontiers);
-    setEnergyFunctionLimits(res_best_frontiers);
 
     outputAlgorithmResults(config, frag_best_frontiers, frag_diversity, "frag");
     outputAlgorithmResults(config, res_best_frontiers, res_diversity, "res");
