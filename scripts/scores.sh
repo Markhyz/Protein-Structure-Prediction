@@ -8,10 +8,10 @@ for protein in ${proteins[@]};
 do
       mkdir -p statistics/$2/$protein
 
-     	cat $1/$protein/*/scores/res.ca_rmsd > statistics/predictor/$protein/best.rmsd
-    	cat $1/$protein/*/scores/res.gdtts > statistics/predictor/$protein/best.gdt
-    	cat $1/$protein/*/scores/res.mean_rmsd > statistics/predictor/$protein/mean.rmsd
-    	cat $1/$protein/*/scores/res.mean_gdt > statistics/predictor/$protein/mean.gdt
+     	cat $1/$protein/*/scores/res.ca_rmsd > statistics/$2/$protein/best.rmsd
+    	cat $1/$protein/*/scores/res.gdtts > statistics/$2/$protein/best.gdt
+    	cat $1/$protein/*/scores/res.mean_rmsd > statistics/$2/$protein/mean.rmsd
+    	cat $1/$protein/*/scores/res.mean_gdt > statistics/$2/$protein/mean.gdt
 
       cp $1/$protein/1/algorithm/frag_gen_1.norm_fitness statistics/$2/$protein/frag_first_frontier.norm_fitness
       cp $1/$protein/1/algorithm/frag_gen_$4.norm_fitness statistics/$2/$protein/frag_last_frontier.norm_fitness
