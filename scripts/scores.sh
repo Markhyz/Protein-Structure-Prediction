@@ -20,6 +20,6 @@ do
 
       python3 scripts/mean_diversity.py $1/$protein $3 algorithm/total.diversity > statistics/$2/$protein/mean.diversity
       
-      ./scripts/hypervolume_mean.sh $1/$protein $3 $4 statistics/$2/$protein
+      ./scripts/hypervolume_mean.sh $1/$protein $3 $4 statistics/$2/$protein&
 done
 

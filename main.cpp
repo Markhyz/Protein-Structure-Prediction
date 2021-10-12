@@ -291,7 +291,7 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    evo_alg::utils::setSeedRNG(12345);
+    //evo_alg::utils::setSeedRNG(12345);
 
     string config_file_name = argv[1];
     config_t config;
