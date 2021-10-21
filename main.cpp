@@ -291,8 +291,6 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    //evo_alg::utils::setSeedRNG(12345);
-
     string config_file_name = argv[1];
     config_t config;
 
@@ -381,6 +379,8 @@ int main(int argc, char** argv) {
     cout << sequence << endl << endl;
 
     cout << "Sec. Struct: " << ss << endl << endl;
+
+    energy_max = 50 * residue_num;
 
     cout.precision(9);
     cout << fixed;

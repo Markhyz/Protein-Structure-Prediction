@@ -123,9 +123,9 @@ void getSS(string ss_path) {
 
     for (size_t i = 0; i < psipred_prob.size(); ++i) {
         double c_prob, h_prob, e_prob;
-        c_prob = (psipred_prob[i][0] + raptorx_prob[i][0] + spider3_prob[i][0]) / 3;
-        h_prob = (psipred_prob[i][1] + raptorx_prob[i][1] + spider3_prob[i][1]) / 3;
-        e_prob = (psipred_prob[i][2] + raptorx_prob[i][2] + spider3_prob[i][2]) / 3;
+        c_prob = psipred_prob[i][0];
+        h_prob = psipred_prob[i][1];
+        e_prob = psipred_prob[i][2];
 
         if (c_prob > h_prob && c_prob > e_prob) {
             ss += "L";
@@ -271,7 +271,7 @@ void getContactMap(string cm_path) {
     vector<tuple<double, int, int>> contact_pairs;
     for (size_t i = 1; i <= residue_num; ++i) {
         for (size_t j = i + 1; j <= residue_num; ++j) {
-            contact_map[i][j] = (raptorx_cm[i][j] * 0.5 + meta_cm[i][j] * 0.2 + spot_cm[i][j] * 0.3);
+            contact_map[i][j] = raptorx_cm[i][j];
             contact_pairs.push_back({contact_map[i][j], i, j});
         }
     }
@@ -282,6 +282,8 @@ void getContactMap(string cm_path) {
         double prob;
         int i, j;
         tie(prob, i, j) = contact_pairs[index];
+        if (cm.size() > residue_num)
+            break;
         cm.push_back({i, j, prob});
         cm_total += prob;
     }
