@@ -32,13 +32,15 @@ def read_file(filename):
     return values
 
 
-print("\\begin{table}[H]")
-print("\\center")
-print("\\begin{tabular}{|c|ccc|}")
+print("\\begin{landscape}")
+print("\\centering")
+print("\\small")
+print("\\begin{longtable}{|cc|c|c|c|c|c|c|c|c|c|c|}")
 print("\\hline")
 print(
-    "\\textbf{Protein} & \\multicolumn{1}{c|}{\\textbf{Method}} & \\multicolumn{1}{c|}{\\textbf{Best}} & \\textbf{Average} \\\\ \\hline"
+    "\\multicolumn{2}{|c|}{\\textbf{Protein}} & \\textbf{\\begin{tabular}[c]{@{}c@{}}MO-BRKGA\\\\ Best\\end{tabular}} & \\textbf{\\begin{tabular}[c]{@{}c@{}}MO-BRKGA\\\\ MUFOLD-CL\\end{tabular}} & \\textbf{\\begin{tabular}[c]{@{}c@{}}MO-BRKGA + PC\\\\ Best\\end{tabular}} & \\textbf{\\begin{tabular}[c]{@{}c@{}}MO-BRKGA + PC\\\\ MUFOLD-CL\\end{tabular}} \\\\ \\hline"
 )
+
 
 proteins = [
     "1ab1",
@@ -66,50 +68,41 @@ proteins = [
 
 scores = {}
 
-read_external_file(scores, "statistics/chen2020")
-read_external_file(scores, "statistics/narloch2020")
-read_external_file(scores, "statistics/song2018")
-read_external_file(scores, "statistics/zhang2018")
-
-scores["Rosetta"] = {"bb": 0, "wb": 0, "ba": 0, "wa": 0}
 scores["MO-BRKGA (best)"] = {"bb": 0, "wb": 0, "ba": 0, "wa": 0}
-scores["MO-BRKGA (mean)"] = {"bb": 0, "wb": 0, "ba": 0, "wa": 0}
 scores["MO-BRKGA (MUFOLD-CL)"] = {"bb": 0, "wb": 0, "ba": 0, "wa": 0}
+scores["MO-BRKGA + PC (best)"] = {"bb": 0, "wb": 0, "ba": 0, "wa": 0}
+scores["MO-BRKGA + PC (MUFOLD-CL)"] = {"bb": 0, "wb": 0, "ba": 0, "wa": 0}
 
 for protein in proteins:
-    rosetta_rmsd = read_file(f"statistics/predictor/{protein}/rosetta_rmsd")
-    rosetta_gdt = read_file(f"statistics/predictor/{protein}/rosetta_gdt")
-    scores["Rosetta"][protein.upper()] = stats(rosetta_rmsd, 0) + stats(rosetta_gdt, 1)
-
-    best_rmsd = read_file(f"statistics/final/{protein}/best.rmsd")
-    best_gdt = read_file(f"statistics/final/{protein}/best.gdt")
+    best_rmsd = read_file(f"statistics/final_2/{protein}/best.rmsd")
+    best_gdt = read_file(f"statistics/final_2/{protein}/best.gdt")
     scores["MO-BRKGA (best)"][protein.upper()] = stats(best_rmsd, 0) + stats(
         best_gdt, 1
     )
 
-    mean_rmsd = read_file(f"statistics/final/{protein}/mean.rmsd")
-    mean_gdt = read_file(f"statistics/final/{protein}/mean.gdt")
-    scores["MO-BRKGA (mean)"][protein.upper()] = stats(mean_rmsd, 0) + stats(
-        mean_gdt, 1
-    )
-
-    mufold_rmsd = read_file(f"statistics/final/{protein}/mufold.rmsd")
-    mufold_gdt = read_file(f"statistics/final/{protein}/mufold.gdt")
+    mufold_rmsd = read_file(f"statistics/final_2/{protein}/mufold.rmsd")
+    mufold_gdt = read_file(f"statistics/final_2/{protein}/mufold.gdt")
     scores["MO-BRKGA (MUFOLD-CL)"][protein.upper()] = stats(mufold_rmsd, 0) + stats(
         mufold_gdt, 1
     )
 
+    old_best_rmsd = read_file(f"statistics/predictor/{protein}/best_rmsd")
+    old_best_gdt = read_file(f"statistics/predictor/{protein}/best_gdt")
+    scores["MO-BRKGA + PC (best)"][protein.upper()] = stats(old_best_rmsd, 0) + stats(
+        old_best_gdt, 1
+    )
+
+    old_mufold_rmsd = read_file(f"statistics/predictor/{protein}/mufold_rmsd")
+    old_mufold_gdt = read_file(f"statistics/predictor/{protein}/mufold_gdt")
+    scores["MO-BRKGA + PC (MUFOLD-CL)"][protein.upper()] = stats(
+        old_mufold_rmsd, 0
+    ) + stats(old_mufold_gdt, 1)
+
     methods = [
-        "NSGA2",
-        "GDE3",
-        "DEMO",
-        "MOPSO",
-        "MODE-K",
-        "SCDE",
-        "Rosetta",
         "MO-BRKGA (best)",
-        "MO-BRKGA (mean)",
         "MO-BRKGA (MUFOLD-CL)",
+        "MO-BRKGA + PC (best)",
+        "MO-BRKGA + PC (MUFOLD-CL)",
     ]
 
     best_best = -1
@@ -119,14 +112,14 @@ for protein in proteins:
 
     for (index, method) in enumerate(methods):
         best_mu = float(
-            scores["MO-BRKGA (MUFOLD-CL)"][protein.upper()][0]
+            scores["MO-BRKGA + PC (best)"][protein.upper()][0]
             if metric == "RMSD"
-            else scores["MO-BRKGA (MUFOLD-CL)"][protein.upper()][3]
+            else scores["MO-BRKGA + PC (best)"][protein.upper()][3]
         )
         avg_mu = float(
-            scores["MO-BRKGA (MUFOLD-CL)"][protein.upper()][1]
+            scores["MO-BRKGA + PC (best)"][protein.upper()][1]
             if metric == "RMSD"
-            else scores["MO-BRKGA (MUFOLD-CL)"][protein.upper()][4]
+            else scores["MO-BRKGA + PC (best)"][protein.upper()][4]
         )
         if protein.upper() in scores[method]:
             best = (
@@ -178,13 +171,14 @@ for protein in proteins:
                     else:
                         scores[method]["wa"] += 1
 
+    print(
+        f"{protein.upper()}",
+        "& \\begin{tabular}[c]{@{}c@{}}$f^*$ \\\\ $\\overline{x}$\\\\ $s$\\end{tabular}",
+        end="",
+    )
+
     for (index, method) in enumerate(methods):
-        color = "{FFFFFF}"
-        if index % 2 != 0:
-            color = "{EFEFEF}"
-        if index == len(methods) - 1:
-            print("\\multirow{-10}{*}{", protein.upper(), "} ", sep="")
-        print(f"& \cellcolor[HTML]{color} {method}", end="")
+        print("& \\begin{tabular}[c]{@{}c@{}}", end="")
 
         best = "-"
         avg = "-"
@@ -210,84 +204,30 @@ for protein in proteins:
         if best != "-":
             if best_idx == index:
                 print(
-                    " & \\cellcolor[HTML]{} \\textbf".format(color),
-                    "{",
-                    "{:.2f}".format(float(best)),
-                    "}",
-                    sep="",
-                    end="",
+                    "\\textbf{", "{:.2f}".format(float(best)), "} \\\\", sep="", end=""
                 )
             else:
-                print(
-                    " & \\cellcolor[HTML]{} {:.2f}".format(color, float(best)), end=""
-                )
+                print("{:.2f} \\\\".format(float(best)), end="")
         else:
-            print(" & \\cellcolor[HTML]{} -".format(color), end="")
+            print("- \\\\", end="")
 
-        print("&\\multicolumn{1}{c|}{", end="")
         if avg != "-":
-            if std != "-":
-                if avg_idx == index:
-                    print(
-                        "\\cellcolor[HTML]{} \\textbf".format(color),
-                        "{",
-                        "{:.2f} $\\pm$ {:.2f}".format(float(avg), float(std)),
-                        "}",
-                        end="",
-                    )
-                else:
-                    print(
-                        "\\cellcolor[HTML]{} {:.2f} $\\pm$ {:.2f}".format(
-                            color, float(avg), float(std)
-                        ),
-                        end="",
-                    )
-            else:
-                if avg_idx == index:
-                    print(
-                        "\\cellcolor[HTML]{} \\textbf".format(color),
-                        "{",
-                        "{:.2f}".format(float(avg)),
-                        "}",
-                        end="",
-                    )
-                else:
-                    print(
-                        "\\cellcolor[HTML]{} {:.2f}".format(color, float(avg)), end=""
-                    )
+            print("{:.2f} \\\\ {:.2f}".format(float(avg), float(std)), end="")
         else:
-            print("\\cellcolor[HTML]{} -".format(color), end="")
+            print("- \\\\ -", end="")
 
-        print("}\\\\")
+        print("\\end{tabular}", end="")
 
-    print("\\hline", sep="")
+    print("\\\\ \\hline")
 
+print("\\multicolumn{2}{|c|}{\\textbf{B/S/W}}", end="")
 for (index, method) in enumerate(methods):
-    color = "{FFFFFF}"
-    if index % 2 != 0:
-        color = "{EFEFEF}"
-    if index == len(methods) - 1:
-        print("\\multirow{-10}{*}{ \\textbf{B/S/W} } ", sep="")
-    print(f"& \cellcolor[HTML]{color} {method}", end="")
 
-    print(
-        " & \\cellcolor[HTML]",
-        color,
-        "{}/0/{}".format(scores[method]["bb"], scores[method]["wb"]),
-        end="",
-    )
-    print(
-        "&\\multicolumn{1}{c|}{\\cellcolor[HTML]",
-        color,
-        "{}/0/{}".format(scores[method]["ba"], scores[method]["wa"]),
-        "}",
-        end="",
-    )
-    print("\\\\")
+    print("& {}/0/{}".format(scores[method]["ba"], scores[method]["wa"]), end="")
 
-print("\\hline", sep="")
+print("\\\\ \\hline")
 
 
-print("\\end{tabular}")
+print("\\end{longtable}")
 print("\\\\ Source: Author")
-print("\\end{table}")
+print("\\end{landscape}")
