@@ -358,7 +358,37 @@ REMARK 999
 REMARK 999 SEQUENCE                                                             
 REMARK 999 THE 30 RESIDUES IN HNP-3 HAVE BEEN NUMBERED FROM 2 - 31 IN           
 REMARK 999 ORDER TO BETTER FIT THE SEQUENCE ALIGNMENT WITH OTHER                
-REMARK 999 DEFENSIN MOLECULES.                                                                     
+REMARK 999 DEFENSIN MOLECULES.                                                  
+DBREF  1DFN A    3    31  UNP    P59665   DEF1_HUMAN      66     94             
+DBREF  1DFN B    3    31  UNP    P59665   DEF1_HUMAN      66     94             
+SEQRES   1 A   30  ASP CYS TYR CYS ARG ILE PRO ALA CYS ILE ALA GLY GLU          
+SEQRES   2 A   30  ARG ARG TYR GLY THR CYS ILE TYR GLN GLY ARG LEU TRP          
+SEQRES   3 A   30  ALA PHE CYS CYS                                              
+SEQRES   1 B   30  ASP CYS TYR CYS ARG ILE PRO ALA CYS ILE ALA GLY GLU          
+SEQRES   2 B   30  ARG ARG TYR GLY THR CYS ILE TYR GLN GLY ARG LEU TRP          
+SEQRES   3 B   30  ALA PHE CYS CYS                                              
+FORMUL   3  HOH   *44(H2 O)                                                     
+SHEET    1 SAB 6 TYR A   4  ARG A   6  0                                        
+SHEET    2 SAB 6 ARG A  25  CYS A  31 -1                                        
+SHEET    3 SAB 6 ARG A  15  TYR A  22 -1                                        
+SHEET    4 SAB 6 ARG B  15  TYR B  22 -1                                        
+SHEET    5 SAB 6 ARG B  25  CYS B  31 -1                                        
+SHEET    6 SAB 6 TYR B   4  ARG B   6 -1                                        
+SSBOND   1 CYS A    3    CYS A   31                          1555   1555  1.97  
+SSBOND   2 CYS A    5    CYS A   20                          1555   1555  1.97  
+SSBOND   3 CYS A   10    CYS A   30                          1555   1555  1.93  
+SSBOND   4 CYS B    3    CYS B   31                          1555   1555  2.01  
+SSBOND   5 CYS B    5    CYS B   20                          1555   1555  1.98  
+SSBOND   6 CYS B   10    CYS B   30                          1555   1555  1.96  
+CISPEP   1 ILE A    7    PRO A    8          0         2.87                     
+CISPEP   2 ILE B    7    PRO B    8          0        -0.02                     
+CRYST1   30.800   45.000   40.300  90.00  90.00  90.00 P 21 21 2     8          
+ORIGX1      1.000000  0.000000  0.000000        0.00000                         
+ORIGX2      0.000000  1.000000  0.000000        0.00000                         
+ORIGX3      0.000000  0.000000  1.000000        0.00000                         
+SCALE1      0.032467  0.000000  0.000000        0.00000                         
+SCALE2      0.000000  0.022222  0.000000        0.00000                         
+SCALE3      0.000000  0.000000  0.024814        0.00000                         
 ATOM      1  N   ASP A   2      28.576  39.403  13.081  1.00 30.33           N  
 ATOM      2  CA  ASP A   2      27.148  39.111  12.804  1.00 29.67           C  
 ATOM      3  C   ASP A   2      27.230  37.737  12.095  1.00 27.65           C  
@@ -594,4 +624,5 @@ ATOM    232  O   CYS A  31      31.812  32.755  11.264  1.00 13.67           O
 ATOM    233  CB  CYS A  31      29.225  33.108  13.148  1.00 14.58           C  
 ATOM    234  SG  CYS A  31      27.549  32.538  13.522  1.00 16.51           S  
 ATOM    235  OXT CYS A  31      31.432  34.760  11.917  1.00 14.34           O  
-TER                                                                             
+TER     236      CYS A  31                                                         
+END                                                                             

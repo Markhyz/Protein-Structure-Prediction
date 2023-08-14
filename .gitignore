@@ -1,3 +1,17 @@
 .vscode
 **/build/*
 external/**/*
+results*
+decoy.log
+*.fit
+*.diver
+*.pdb
+*.info
+aa_rmsd
+ca_rmsd
+mean_rmsd
+gdttm
+mean_gdt
+*.log
+*.png
+python-env
